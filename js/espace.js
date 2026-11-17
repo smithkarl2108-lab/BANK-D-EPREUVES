@@ -122,6 +122,7 @@
   if (profile.role === "admin") {
     document.getElementById("adminResetPanel").hidden = false;
     await loadRequests();
+    window.setInterval(loadRequests, 30000);
   }
 
   document.getElementById("logoutButton")?.addEventListener("click", async () => {

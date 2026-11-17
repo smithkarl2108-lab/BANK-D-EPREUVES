@@ -20,33 +20,35 @@
     <section class="auth-aside">
       <span class="eyebrow">TON ESPACE DE RÉVISION</span>
       <h1>Chaque épreuve te rapproche de la réussite.</h1>
-      <p>Connecte-toi pour retrouver tes ressources et profiter de ton espace personnel.</p>
-      <div class="auth-benefits"><span>✓ Sujets et corrigés organisés</span><span>✓ Ressources adaptées à ta classe</span><span>✓ Favoris et suivi personnel</span></div>
+      <p>Un identifiant, un mot de passe et tu accèdes à tes ressources.</p>
+      <div class="auth-benefits"><span>✓ Aucun e-mail demandé</span><span>✓ Sujets et corrigés organisés</span><span>✓ Assistance de l'administration</span></div>
       <div class="auth-decoration">BE<span>.</span></div>
     </section>
     <section class="auth-card">
       <div class="auth-tabs" role="tablist"><button class="auth-tab active" id="loginTab" type="button">Connexion</button><button class="auth-tab" id="signupTab" type="button">Créer un compte</button></div>
       <div id="authMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
       <form id="loginForm" class="auth-form">
-        <h2>Heureux de te revoir !</h2><p>Entre tes identifiants pour continuer.</p>
-        <label for="loginEmail">Adresse e-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="exemple@email.com" required>
-        <label for="loginPassword">Mot de passe</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Ton mot de passe" required minlength="6">
+        <h2>Heureux de te revoir !</h2><p>Entre ton identifiant et ton mot de passe.</p>
+        <label for="loginUsername">Identifiant</label><input id="loginUsername" type="text" autocomplete="username" placeholder="Ton identifiant" required minlength="3" maxlength="30">
+        <label for="loginPassword">Mot de passe</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Ton mot de passe" required minlength="8">
         <button class="auth-submit" type="submit">Se connecter <span>→</span></button>
         <button class="text-action" id="forgotPassword" type="button">Mot de passe oublié ?</button>
       </form>
       <form id="signupForm" class="auth-form" hidden>
-        <h2>Rejoins la communauté</h2><p>Crée ton compte élève gratuitement.</p>
+        <h2>Rejoins la communauté</h2><p>Crée ton compte en quelques secondes.</p>
         <label for="signupName">Nom complet</label><input id="signupName" type="text" autocomplete="name" placeholder="Ton nom et prénom" required maxlength="80">
-        <label for="signupEmail">Adresse e-mail</label><input id="signupEmail" type="email" autocomplete="email" placeholder="exemple@email.com" required>
-        <label for="signupPassword">Mot de passe</label><input id="signupPassword" type="password" autocomplete="new-password" placeholder="6 caractères minimum" required minlength="6">
-        <label for="signupConfirm">Confirmer le mot de passe</label><input id="signupConfirm" type="password" autocomplete="new-password" placeholder="Répète ton mot de passe" required minlength="6">
+        <label for="signupUsername">Choisis un identifiant</label><input id="signupUsername" type="text" autocomplete="username" placeholder="Ex. karl.smith" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._-]+">
+        <label for="signupPhone">Téléphone (facultatif)</label><input id="signupPhone" type="tel" autocomplete="tel" placeholder="Ex. 6XX XX XX XX">
+        <label for="signupPassword">Mot de passe</label><input id="signupPassword" type="password" autocomplete="new-password" placeholder="8 caractères minimum" required minlength="8">
+        <label for="signupConfirm">Confirmer le mot de passe</label><input id="signupConfirm" type="password" autocomplete="new-password" placeholder="Répète ton mot de passe" required minlength="8">
         <button class="auth-submit" type="submit">Créer mon compte <span>→</span></button>
-        <small class="auth-legal">L'inscription crée un compte élève. Les rôles intervenant et administrateur sont attribués séparément.</small>
+        <small class="auth-legal">Les comptes créés sont des comptes élèves. Les rôles intervenant et administrateur sont attribués par l'administration.</small>
       </form>
-      <form id="resetForm" class="auth-form" hidden>
-        <h2>Nouveau mot de passe</h2><p>Choisis un nouveau mot de passe sécurisé.</p>
-        <label for="newPassword">Nouveau mot de passe</label><input id="newPassword" type="password" minlength="6" required>
-        <button class="auth-submit" type="submit">Mettre à jour <span>→</span></button>
+      <form id="requestResetForm" class="auth-form" hidden>
+        <h2>Mot de passe oublié ?</h2><p>Indique ton identifiant. L'administration recevra ta demande et pourra réinitialiser ton accès.</p>
+        <label for="resetUsername">Ton identifiant</label><input id="resetUsername" type="text" autocomplete="username" required minlength="3" maxlength="30" placeholder="Ton identifiant">
+        <button class="auth-submit" type="submit">Envoyer la demande <span>→</span></button>
+        <button class="text-action" id="backToLogin" type="button">← Retour à la connexion</button>
       </form>
     </section>
   </main>

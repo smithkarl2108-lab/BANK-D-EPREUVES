@@ -1,0 +1,2 @@
+create index if not exists password_reset_requests_user_id_idx on public.password_reset_requests(user_id);
+create index if not exists password_reset_requests_reviewed_by_idx on public.password_reset_requests(reviewed_by);

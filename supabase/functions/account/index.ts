@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       if (password.length < 8) return json({ error: "Le mot de passe doit contenir au moins 8 caractères." }, 400);
       if (phoneNumber.length > 30) return json({ error: "Numéro de téléphone invalide." }, 400);
 
-      const { data: existing } = await admin.from("profiles").select("id").ilike("username", username).maybeSingle();
+      const { data: existing } = await admin.from("profiles").select("id").eq("username", username).maybeSingle();
       if (existing) return json({ error: "Cet identifiant est déjà utilisé. Choisis-en un autre." }, 409);
 
       const internalEmail = `${crypto.randomUUID()}@auth.bankdepreuves.invalid`;
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       const username = normalizeUsername(body.username);
       const password = String(body.password ?? "");
       if (!validUsername(username) || !password) return json({ error: "Identifiant ou mot de passe incorrect." }, 401);
-      const { data: profile } = await admin.from("profiles").select("id,is_active").ilike("username", username).maybeSingle();
+      const { data: profile } = await admin.from("profiles").select("id,is_active").eq("username", username).maybeSingle();
       if (!profile?.id || !profile.is_active) return json({ error: "Identifiant ou mot de passe incorrect." }, 401);
       const { data: authUser, error: userError } = await admin.auth.admin.getUserById(profile.id);
       if (userError || !authUser.user?.email) return json({ error: "Identifiant ou mot de passe incorrect." }, 401);
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     if (action === "request-reset") {
       const username = normalizeUsername(body.username);
       if (validUsername(username)) {
-        const { data: profile } = await admin.from("profiles").select("id,is_active").ilike("username", username).maybeSingle();
+        const { data: profile } = await admin.from("profiles").select("id,is_active").eq("username", username).maybeSingle();
         if (profile?.id && profile.is_active) {
           const { data: pending } = await admin.from("password_reset_requests")
             .select("id").eq("user_id", profile.id).eq("status", "pending").maybeSingle();
@@ -121,8 +121,9 @@ Deno.serve(async (req) => {
         await admin.from("password_reset_requests").update({ status: "rejected", reviewed_at: new Date().toISOString(), reviewed_by: reviewer.id }).eq("id", requestId);
         return json({ success: true, message: "Demande refusée." });
       }
-      const bytes = crypto.getRandomValues(new Uint8Array(15));
-      const temporaryPassword = Array.from(bytes, b => "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@"[b % 64]).join("");
+      const bytes = crypto.getRandomValues(new Uint8Array(18));
+      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@";
+      const temporaryPassword = Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
       const { error: resetError } = await admin.auth.admin.updateUserById(request.user_id, { password: temporaryPassword });
       if (resetError) return json({ error: "La réinitialisation a échoué." }, 500);
       const { error: updateError } = await admin.from("password_reset_requests").update({

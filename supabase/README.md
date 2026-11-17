@@ -1,29 +1,28 @@
 # Supabase
 
-Le projet Supabase actif est le backend de BANK D'EPREUVES.
+Projet backend de BANK D'EPREUVES.
 
 - Projet : `BANK D'EPREUVES`
 - Région : `eu-west-3`
 - Référence : `wlmnbigbhxpocwwsrsre`
 - URL API : `https://wlmnbigbhxpocwwsrsre.supabase.co`
 
-Le schéma initial a été appliqué directement au projet Supabase et les dix tables métier disposent de RLS. Le bucket Storage `documents` est privé. Les utilisateurs publics s'inscrivent avec le rôle `student` par défaut. Les rôles intervenant et administrateur ne doivent jamais être fournis par le navigateur.
+## Authentification
+
+L'interface publique utilise un identifiant et un mot de passe. Aucun e-mail n'est demandé à l'utilisateur. Supabase Auth conserve un e-mail technique aléatoire interne, non affiché et non utilisé pour contacter l'utilisateur.
+
+Les comptes sont créés par l'Edge Function `account`. Les mots de passe ne sont jamais enregistrés dans les tables métier. La clé `service_role` reste exclusivement côté Edge Function.
+
+## Mot de passe oublié
+
+L'utilisateur transmet son identifiant. Une demande est créée dans `password_reset_requests`. Un administrateur connecté peut examiner les demandes depuis son espace et générer un mot de passe temporaire. Celui-ci est affiché dans l'interface après validation et doit être transmis manuellement à l'utilisateur par un canal privé.
+
+Le numéro de téléphone est facultatif à l'inscription ; il facilite la remise du mot de passe temporaire. Aucun SMS ou message WhatsApp automatique n'est configuré à ce stade.
 
 ## Sécurité
 
+- RLS est activé sur les tables exposées.
+- Les utilisateurs ne peuvent pas modifier leur rôle.
+- Les actions privilégiées passent par l'Edge Function et vérifient le rôle administrateur côté serveur.
 - Ne jamais committer une clé `service_role` ou un secret.
-- La clé `publishable` utilisée dans le frontend est publique ; RLS doit rester activé.
-- Ne pas autoriser un utilisateur à modifier son propre rôle.
-- Les élèves ne doivent consulter que les documents publiés.
-- Un intervenant ne doit gérer que ses propres documents.
-- Les fichiers sont conservés dans un bucket privé.
-
-## Authentification
-
-La page `connexion.html` gère la connexion, l'inscription élève et la réinitialisation du mot de passe. `espace.html` vérifie la session et lit le profil courant.
-
-Avant les tests en ligne, configurer Supabase > Authentication > URL Configuration :
-- Site URL : URL principale du site Vercel ;
-- Redirect URLs : URL de production, domaines Preview Vercel et URL locale de développement.
-
-La confirmation e-mail est prise en charge. Les paramètres d'authentification doivent être vérifiés dans le dashboard Supabase avant les tests réels.
+- La clé publishable du frontend est publique ; les politiques RLS restent indispensables.

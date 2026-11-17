@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102a43">
+  <meta name="description" content="BANK D'EPREUVES — la bibliothèque numérique des épreuves scolaires au Cameroun.">
+  <title>BANK D'EPREUVES | La réussite se prépare</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BANK D'EPREUVES, accueil">
+      <span class="brand-mark">B<span>É</span></span>
+      <span class="brand-name">BANK <strong>D'EPREUVES</strong><small>La réussite se prépare</small></span>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+    <nav class="main-nav" id="mainNav">
+      <a class="active" href="#accueil">Accueil</a>
+      <a href="#bibliotheque">Épreuves</a>
+      <a href="#fonctionnement">Comment ça marche</a>
+      <a class="nav-login" href="#connexion">Connexion</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="accueil">
+      <div class="hero-content">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> La bibliothèque scolaire du Cameroun</span>
+        <h1>Prépare tes examens.<br><span>Vise l'excellence.</span></h1>
+        <p>Retrouve des sujets d'examen, des épreuves de séquence et leurs corrigés pour mieux préparer ta réussite.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#bibliotheque">Explorer les épreuves <span>→</span></a>
+          <a class="button button-ghost" href="#fonctionnement">Découvrir la plateforme</a>
+        </div>
+        <div class="hero-note"><span class="note-icon">✓</span> Des ressources organisées par classe, série et matière</div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="visual-glow"></div>
+        <div class="paper paper-back"></div>
+        <div class="paper paper-front">
+          <div class="paper-top"><span>BE</span><span>ÉPREUVE SCOLAIRE</span></div>
+          <div class="paper-line paper-line-title"></div>
+          <div class="paper-line"></div><div class="paper-line short"></div>
+          <div class="paper-section">EXERCICE 1</div>
+          <div class="paper-line"></div><div class="paper-line"></div><div class="paper-line medium"></div>
+          <div class="paper-section">EXERCICE 2</div>
+          <div class="paper-line"></div><div class="paper-line short"></div>
+          <div class="paper-stamp">SUJET</div>
+        </div>
+        <div class="floating-card"><span class="floating-icon">✦</span><span><strong>Apprends mieux</strong><small>Progresse à ton rythme</small></span></div>
+      </div>
+    </section>
+
+    <section class="stats-strip" aria-label="Avantages">
+      <div><strong>Une seule banque</strong><span>Toutes tes ressources au même endroit</span></div>
+      <div><strong>Recherche simple</strong><span>Par classe, série et matière</span></div>
+      <div><strong>Apprentissage continu</strong><span>Sujets et corrigés à consulter</span></div>
+    </section>
+
+    <section class="library section" id="bibliotheque">
+      <div class="section-heading">
+        <div><span class="eyebrow">TA BOÎTE À OUTILS</span><h2>Explore la bibliothèque</h2><p>Retrouve rapidement les ressources dont tu as besoin.</p></div>
+        <span class="resource-count" id="resourceCount">0 ressource</span>
+      </div>
+      <div class="filters">
+        <label class="search-field"><span>⌕</span><input id="searchInput" type="search" placeholder="Rechercher une épreuve..." aria-label="Rechercher une épreuve"></label>
+        <select id="classFilter" aria-label="Filtrer par classe"><option value="">Toutes les classes</option><option>3e</option><option>Première C</option><option>Terminale C</option><option>Terminale D</option></select>
+        <select id="subjectFilter" aria-label="Filtrer par matière"><option value="">Toutes les matières</option><option>Mathématiques</option><option>Physique</option><option>Chimie</option><option>Philosophie</option><option>Informatique</option></select>
+        <select id="typeFilter" aria-label="Filtrer par type"><option value="">Tous les types</option><option value="Sujet">Sujet</option><option value="Corrigé">Corrigé</option></select>
+      </div>
+      <div class="resource-grid" id="resourceGrid">
+        <div class="empty-state"><span>⌕</span><strong>La bibliothèque se prépare</strong><p>Les premières épreuves apparaîtront ici après leur ajout.</p></div>
+      </div>
+    </section>
+
+    <section class="how section" id="fonctionnement">
+      <div class="section-heading centered"><span class="eyebrow">SIMPLE ET PRATIQUE</span><h2>Tout pour mieux réviser</h2><p>Une expérience pensée pour les élèves et les enseignants.</p></div>
+      <div class="steps-grid">
+        <article class="step-card"><span class="step-number">01</span><div class="step-icon">⌕</div><h3>Recherche</h3><p>Choisis ta classe, ta série et la matière que tu souhaites travailler.</p></article>
+        <article class="step-card"><span class="step-number">02</span><div class="step-icon">▤</div><h3>Consultation</h3><p>Accède aux sujets disponibles et retrouve les corrigés associés.</p></article>
+        <article class="step-card"><span class="step-number">03</span><div class="step-icon">↗</div><h3>Progression</h3><p>Entraîne-toi régulièrement et construis ta méthode de travail.</p></article>
+      </div>
+    </section>
+
+    <section class="join-section" id="connexion">
+      <div><span class="eyebrow">BIENTÔT DISPONIBLE</span><h2>Prêt à enrichir tes révisions ?</h2><p>Les espaces élèves, intervenants et administration arrivent dans les prochaines étapes.</p></div>
+      <a class="button button-light" href="mailto:contact@bankdepreuves.cm">Nous contacter <span>→</span></a>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="brand footer-brand" href="#"><span class="brand-mark">B<span>É</span></span><span class="brand-name">BANK <strong>D'EPREUVES</strong><small>La réussite se prépare</small></span></a><p>© <span id="currentYear"></span> BANK D'EPREUVES. Tous droits réservés.</p><span class="footer-country">Conçu pour l'éducation au Cameroun 🇨🇲</span></footer>
+</body>
+</html>

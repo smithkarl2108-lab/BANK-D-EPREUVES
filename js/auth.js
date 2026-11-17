@@ -1,138 +1,128 @@
-/* Authentification BANK D'EPREUVES — Supabase Auth */
+/* Authentification par identifiant — aucune adresse e-mail demandée à l'utilisateur. */
 "use strict";
-
 (() => {
   const config = window.BANK_SUPABASE_CONFIG;
-  const supabaseLib = window.supabase;
+  const lib = window.supabase;
   const message = document.getElementById("authMessage");
   const loginForm = document.getElementById("loginForm");
   const signupForm = document.getElementById("signupForm");
-  const resetForm = document.getElementById("resetForm");
+  const requestResetForm = document.getElementById("requestResetForm");
   const loginTab = document.getElementById("loginTab");
   const signupTab = document.getElementById("signupTab");
   const year = document.getElementById("authYear");
   if (year) year.textContent = new Date().getFullYear();
 
-  if (!config?.url || !config?.publishableKey || !supabaseLib?.createClient) {
-    showMessage("La connexion au service est momentanément indisponible. Réessaie plus tard.", "error");
+  if (!config?.url || !config?.publishableKey || !lib?.createClient) {
+    showMessage("Le service de compte est momentanément indisponible.", "error");
     return;
   }
-
-  const client = supabaseLib.createClient(config.url, config.publishableKey);
-  let recoveryMode = new URLSearchParams(window.location.search).get("mode") === "reset";
+  const client = lib.createClient(config.url, config.publishableKey);
+  const endpoint = config.url + "/functions/v1/account";
 
   function showMessage(text, type = "info") {
-    if (!message) return;
     message.textContent = text;
-    message.className = `auth-message ${type}`;
+    message.className = "auth-message " + type;
     message.hidden = false;
   }
-
-  function hideMessage() {
-    if (message) message.hidden = true;
-  }
-
-  function setBusy(form, busy) {
-    const button = form?.querySelector('button[type="submit"]');
+  function hideMessage() { message.hidden = true; }
+  function busy(form, value) {
+    const button = form.querySelector('button[type="submit"]');
     if (button) {
-      button.disabled = busy;
-      button.dataset.originalText ||= button.textContent;
-      button.textContent = busy ? "Patiente un instant…" : button.dataset.originalText;
+      button.disabled = value;
+      button.dataset.label ||= button.textContent;
+      button.textContent = value ? "Patiente un instant…" : button.dataset.label;
     }
   }
-
+  async function callAccount(payload) {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: config.publishableKey },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Une erreur est survenue.");
+    return result;
+  }
   function switchMode(mode) {
     hideMessage();
-    recoveryMode = false;
     loginForm.hidden = mode !== "login";
     signupForm.hidden = mode !== "signup";
-    resetForm.hidden = true;
+    requestResetForm.hidden = mode !== "reset";
     loginTab.classList.toggle("active", mode === "login");
     signupTab.classList.toggle("active", mode === "signup");
   }
-
-  async function redirectToAccount() {
-    window.location.href = "espace.html";
-  }
-
-  loginTab?.addEventListener("click", () => switchMode("login"));
-  signupTab?.addEventListener("click", () => switchMode("signup"));
-
-  loginForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    hideMessage();
-    setBusy(loginForm, true);
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
-    const { error } = await client.auth.signInWithPassword({ email, password });
-    setBusy(loginForm, false);
-    if (error) return showMessage(error.message, "error");
-    await redirectToAccount();
+  loginTab.addEventListener("click", () => switchMode("login"));
+  signupTab.addEventListener("click", () => switchMode("signup"));
+  document.getElementById("forgotPassword").addEventListener("click", () => {
+    document.getElementById("resetUsername").value = document.getElementById("loginUsername").value.trim();
+    switchMode("reset");
   });
+  document.getElementById("backToLogin").addEventListener("click", () => switchMode("login"));
 
-  signupForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    hideMessage();
-    const fullName = document.getElementById("signupName").value.trim();
-    const email = document.getElementById("signupEmail").value.trim();
-    const password = document.getElementById("signupPassword").value;
-    const confirmation = document.getElementById("signupConfirm").value;
-    if (password !== confirmation) return showMessage("Les deux mots de passe ne correspondent pas.", "error");
-    setBusy(signupForm, true);
-    const { data, error } = await client.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin + "/connexion.html"
-      }
-    });
-    setBusy(signupForm, false);
-    if (error) return showMessage(error.message, "error");
-    if (data.session) {
-      showMessage("Ton compte est créé. Bienvenue sur BANK D'EPREUVES !", "success");
-      window.setTimeout(redirectToAccount, 900);
-    } else {
-      showMessage("Inscription enregistrée ! Consulte ta boîte e-mail pour confirmer ton adresse avant de te connecter.", "success");
-      signupForm.reset();
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault(); hideMessage(); busy(loginForm, true);
+    try {
+      const result = await callAccount({
+        action: "login",
+        username: document.getElementById("loginUsername").value,
+        password: document.getElementById("loginPassword").value
+      });
+      const { error } = await client.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token
+      });
+      if (error) throw error;
+      window.location.href = "espace.html";
+    } catch (error) {
+      showMessage(error.message || "Connexion impossible.", "error");
+    } finally {
+      busy(loginForm, false);
     }
   });
 
-  document.getElementById("forgotPassword")?.addEventListener("click", async () => {
-    hideMessage();
-    const email = document.getElementById("loginEmail").value.trim();
-    if (!email) return showMessage("Saisis d'abord ton adresse e-mail dans le champ de connexion.", "info");
-    const { error } = await client.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/connexion.html?mode=reset"
-    });
-    if (error) return showMessage(error.message, "error");
-    showMessage("Un lien de réinitialisation vient d'être envoyé si cette adresse correspond à un compte.", "success");
+  signupForm.addEventListener("submit", async (event) => {
+    event.preventDefault(); hideMessage();
+    const password = document.getElementById("signupPassword").value;
+    if (password !== document.getElementById("signupConfirm").value) {
+      return showMessage("Les deux mots de passe ne correspondent pas.", "error");
+    }
+    busy(signupForm, true);
+    try {
+      const result = await callAccount({
+        action: "signup",
+        fullName: document.getElementById("signupName").value,
+        username: document.getElementById("signupUsername").value,
+        phoneNumber: document.getElementById("signupPhone").value,
+        password
+      });
+      signupForm.reset();
+      switchMode("login");
+      showMessage(result.message, "success");
+    } catch (error) {
+      showMessage(error.message || "Création du compte impossible.", "error");
+    } finally {
+      busy(signupForm, false);
+    }
   });
 
-  if (recoveryMode) {
-    loginForm.hidden = true;
-    signupForm.hidden = true;
-    resetForm.hidden = false;
-    loginTab.classList.remove("active");
-    signupTab.classList.remove("active");
-  }
-
-  resetForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    hideMessage();
-    const password = document.getElementById("newPassword").value;
-    setBusy(resetForm, true);
-    const { error } = await client.auth.updateUser({ password });
-    setBusy(resetForm, false);
-    if (error) return showMessage(error.message, "error");
-    showMessage("Ton mot de passe a été modifié. Tu peux maintenant te connecter.", "success");
-    resetForm.hidden = true;
-    loginForm.hidden = false;
-    loginTab.classList.add("active");
+  requestResetForm.addEventListener("submit", async (event) => {
+    event.preventDefault(); hideMessage(); busy(requestResetForm, true);
+    try {
+      const result = await callAccount({
+        action: "request-reset",
+        username: document.getElementById("resetUsername").value
+      });
+      requestResetForm.reset();
+      switchMode("login");
+      showMessage(result.message, "success");
+    } catch (error) {
+      showMessage(error.message || "Envoi de la demande impossible.", "error");
+    } finally {
+      busy(requestResetForm, false);
+    }
   });
 
-  client.auth.getSession().then(({ data, error }) => {
-    if (error) showMessage("Impossible de vérifier la session : " + error.message, "error");
-    else if (data.session && !recoveryMode) redirectToAccount();
+  client.auth.getSession().then(({ data }) => {
+    if (data.session) window.location.replace("espace.html");
   });
 })();

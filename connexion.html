@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102a43">
+  <meta name="description" content="Connexion et inscription à BANK D'EPREUVES.">
+  <title>Connexion | BANK D'EPREUVES</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/auth.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js" defer></script><script src="js/auth.js" defer></script>
+</head>
+<body class="auth-page">
+  <header class="site-header auth-header">
+    <a class="brand" href="index.html"><span class="brand-mark">B<span>É</span></span><span class="brand-name">BANK <strong>D'EPREUVES</strong><small>La réussite se prépare</small></span></a>
+    <a class="back-link" href="index.html">← Retour à l'accueil</a>
+  </header>
+  <main class="auth-layout">
+    <section class="auth-aside">
+      <span class="eyebrow">TON ESPACE DE RÉVISION</span>
+      <h1>Chaque épreuve te rapproche de la réussite.</h1>
+      <p>Connecte-toi pour retrouver tes ressources et profiter de ton espace personnel.</p>
+      <div class="auth-benefits"><span>✓ Sujets et corrigés organisés</span><span>✓ Ressources adaptées à ta classe</span><span>✓ Favoris et suivi personnel</span></div>
+      <div class="auth-decoration">BE<span>.</span></div>
+    </section>
+    <section class="auth-card">
+      <div class="auth-tabs" role="tablist"><button class="auth-tab active" id="loginTab" type="button">Connexion</button><button class="auth-tab" id="signupTab" type="button">Créer un compte</button></div>
+      <div id="authMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
+      <form id="loginForm" class="auth-form">
+        <h2>Heureux de te revoir !</h2><p>Entre tes identifiants pour continuer.</p>
+        <label for="loginEmail">Adresse e-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="exemple@email.com" required>
+        <label for="loginPassword">Mot de passe</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Ton mot de passe" required minlength="6">
+        <button class="auth-submit" type="submit">Se connecter <span>→</span></button>
+        <button class="text-action" id="forgotPassword" type="button">Mot de passe oublié ?</button>
+      </form>
+      <form id="signupForm" class="auth-form" hidden>
+        <h2>Rejoins la communauté</h2><p>Crée ton compte élève gratuitement.</p>
+        <label for="signupName">Nom complet</label><input id="signupName" type="text" autocomplete="name" placeholder="Ton nom et prénom" required maxlength="80">
+        <label for="signupEmail">Adresse e-mail</label><input id="signupEmail" type="email" autocomplete="email" placeholder="exemple@email.com" required>
+        <label for="signupPassword">Mot de passe</label><input id="signupPassword" type="password" autocomplete="new-password" placeholder="6 caractères minimum" required minlength="6">
+        <label for="signupConfirm">Confirmer le mot de passe</label><input id="signupConfirm" type="password" autocomplete="new-password" placeholder="Répète ton mot de passe" required minlength="6">
+        <button class="auth-submit" type="submit">Créer mon compte <span>→</span></button>
+        <small class="auth-legal">L'inscription crée un compte élève. Les rôles intervenant et administrateur sont attribués séparément.</small>
+      </form>
+      <form id="resetForm" class="auth-form" hidden>
+        <h2>Nouveau mot de passe</h2><p>Choisis un nouveau mot de passe sécurisé.</p>
+        <label for="newPassword">Nouveau mot de passe</label><input id="newPassword" type="password" minlength="6" required>
+        <button class="auth-submit" type="submit">Mettre à jour <span>→</span></button>
+      </form>
+    </section>
+  </main>
+  <footer class="auth-footer">© <span id="authYear"></span> BANK D'EPREUVES · Conçu pour l'éducation au Cameroun 🇨🇲</footer>
+</body>
+</html>

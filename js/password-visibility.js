@@ -1,11 +1,11 @@
-/* Bouton afficher/masquer pour tous les champs mot de passe. */
+/* Bouton afficher/masquer pour tous les champs mot de passe, y compris ceux ajoutés dynamiquement. */
 "use strict";
 (() => {
   const eyeOpen = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
   const eyeClosed = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 3 18 18M10.6 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.8 10.8 0 0 0 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
 
   function addPasswordToggle(input) {
-    if (input.dataset.visibilityReady === "true") return;
+    if (input.dataset.visibilityReady === "true" || !input.parentNode) return;
     input.dataset.visibilityReady = "true";
 
     const wrapper = document.createElement("div");
@@ -32,5 +32,18 @@
     wrapper.appendChild(toggle);
   }
 
-  document.querySelectorAll('input[type="password"]').forEach(addPasswordToggle);
+  function scan(root) {
+    if (root.matches?.('input[type="password"]')) addPasswordToggle(root);
+    root.querySelectorAll?.('input[type="password"]').forEach(addPasswordToggle);
+  }
+
+  scan(document);
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) scan(node);
+      });
+    });
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 })();

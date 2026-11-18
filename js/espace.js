@@ -179,7 +179,7 @@
   }
 
   document.getElementById("logoutButton")?.addEventListener("click", async () => {
-    const { error } = await client.auth.signOut();
+    const { error } = await client.auth.signOut({ scope: "local" });
     if (error) say("La déconnexion a échoué : " + error.message, "error");
     else window.location.replace("connexion.html");
   });

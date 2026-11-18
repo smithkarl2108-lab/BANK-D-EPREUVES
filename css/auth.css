@@ -38,3 +38,10 @@
 .upload-summary{margin:12px 0 0!important;padding:10px;background:#f0f6fa;border-radius:8px;color:#526b7c!important;font-size:11px!important}
 .upload-analysis-card .upload-analysis-warning:not(ul){padding:9px 11px;background:#fff6e8;border-radius:8px}
 @media(max-width:600px){.upload-analysis-grid{grid-template-columns:1fr}.upload-analysis-heading{flex-direction:column}.upload-file-row{align-items:flex-start}}
+
+.upload-progress{margin:16px 0 8px;padding:10px 12px;border-radius:8px;background:#edf5fb;color:#315d7b;font-size:12px;font-weight:700}
+.upload-card-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px}
+.upload-card-actions .confirm-one{border:0;border-radius:8px;padding:11px 15px;background:#102a43;color:#fff;font:700 11px "DM Sans";cursor:pointer}
+.upload-card-actions .confirm-one:hover{background:#2878b9}
+.upload-card-note{font-size:10px;color:#718391;overflow-wrap:anywhere}
+@media(max-width:600px){.upload-card-actions{align-items:flex-start;flex-direction:column}}

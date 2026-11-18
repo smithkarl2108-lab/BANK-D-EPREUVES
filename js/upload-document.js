@@ -61,7 +61,7 @@
         <label>Série<select data-f="series">${listOptions(catalog.series,"Aucune / sans série")}</select></label>
         <label>Matière *<select data-f="subject" required>${listOptions(catalog.subjects,"Choisir la matière")}</select></label>
         <label>Année<input data-f="year" type="number" min="1950" max="2100" value="${esc(a.exam_year||"")}"></label>
-        <label>Numéro de séquence<input data-f="sequence" type="number" min="1" max="12" value="${esc(a.sequence_number||"")}"></label>
+        <label>Numéro de séquence<input data-f="sequence" type="number" min="1" max="10" value="${esc(a.sequence_number||"")}"></label>
       </div>
       <label class="upload-description-label">Description<input data-f="description" maxlength="1000" value="${esc(a.description||"")}"></label>
       <p class="upload-summary"><strong>Résumé :</strong> ${esc(a.extracted_text_summary||"Aucun résumé disponible : vérification manuelle nécessaire.")}</p>

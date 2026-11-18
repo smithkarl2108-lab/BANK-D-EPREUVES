@@ -72,7 +72,7 @@
   async function loadPending() {
     list.textContent = "Chargement…";
     const { data, error } = await client.from("documents")
-      .select("id,title,description,document_type,exam_year,sequence_number,created_at,school_classes(name),series(name),subjects(name),document_files(original_name,storage_path,bucket_id,mime_type)")
+      .select("id,title,description,document_type,exam_year,sequence_number,created_at,school_classes(name),series(name),class_offerings(display_name,school_variants(name)),subjects(name),document_files(original_name,storage_path,bucket_id,mime_type)")
       .eq("status", "pending").order("created_at", { ascending: true });
     if (error) {
       list.textContent = "Impossible de charger les documents : " + error.message;
@@ -93,7 +93,7 @@
       title.textContent = doc.title || "Document sans titre";
       const meta = document.createElement("p");
       const type = ({ sujet: "Sujet", corrige: "Corrigé", cours: "Cours", autre: "Autre" })[doc.document_type] || "Document";
-      meta.textContent = [type, doc.school_classes?.name, doc.series?.name, doc.subjects?.name, doc.exam_year, doc.sequence_number ? "Séquence " + doc.sequence_number : ""].filter(Boolean).join(" · ");
+      meta.textContent = [type, doc.class_offerings?.display_name || [doc.school_classes?.name, doc.series?.name].filter(Boolean).join(" "), doc.subjects?.name, doc.exam_year, doc.sequence_number ? "Séquence " + doc.sequence_number : ""].filter(Boolean).join(" · ");
       const description = document.createElement("p");
       description.textContent = doc.description || "Aucune description.";
       const fileInfo = document.createElement("p");

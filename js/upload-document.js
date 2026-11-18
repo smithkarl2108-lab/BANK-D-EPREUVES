@@ -111,10 +111,14 @@ if(item.confirmed){item.confirmed=false;const st=card.querySelector(".upload-ana
 const btn=card.querySelector(".confirm-one");btn.disabled=true;btn.textContent="Téléversement sécurisé…";
 try{
 const {data:{session:s}}=await db.auth.getSession();if(!s)throw Error("Session expirée.");
+if(!item.uploaded||!item.path||!item.hash){
 const safe=item.file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
-item.path=s.user.id+"/"+crypto.randomUUID()+"/"+crypto.randomUUID()+"-"+safe;
-const up=await db.storage.from("documents").upload(item.path,item.file,{contentType:item.mime,upsert:false});if(up.error)throw up.error;
-const digest=await crypto.subtle.digest("SHA-256",await item.file.arrayBuffer());item.hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");item.uploaded=true;
+const digest=await crypto.subtle.digest("SHA-256",await item.file.arrayBuffer());
+const hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+const path=s.user.id+"/"+crypto.randomUUID()+"/"+crypto.randomUUID()+"-"+safe;
+const up=await db.storage.from("documents").upload(path,item.file,{contentType:item.mime,upsert:false});if(up.error)throw up.error;
+item.path=path;item.hash=hash;item.uploaded=true;
+}
 item.confirmed=true;card.querySelector(".upload-card-note").textContent="Fichier privé téléversé et fiche confirmée";
 const st=card.querySelector(".upload-analysis-state");st.textContent="Fiche confirmée";st.className="upload-analysis-state success";btn.textContent="Modifier la fiche";updateProgress();tell("Fiche confirmée. Le fichier est maintenant stocké en privé, sans être encore envoyé à l'administration.","success");
 }catch(e){item.uploaded=false;item.path=null;item.hash=null;tell("Impossible de confirmer cette fiche : "+e.message,"error");}

@@ -42,20 +42,6 @@
     "Identifiant : " + (profile.username || "non défini") + " · " +
     ({ student: "Élève", teacher: "Intervenant", admin: "Administrateur" }[profile.role] || "Utilisateur");
 
-  async function accountCall(payload) {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: config.publishableKey,
-        Authorization: "Bearer " + (client.auth.getSession ? session.access_token : ""),
-      },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Une erreur est survenue.");
-    return data;
-  }
 
   if (session.user.app_metadata?.must_change_password === true) {
     document.getElementById("changePasswordPanel").hidden = false;

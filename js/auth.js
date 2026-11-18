@@ -19,6 +19,15 @@
   const client = lib.createClient(config.url, config.publishableKey);
   const endpoint = config.url + "/functions/v1/account";
 
+  // Une visite de la page de connexion démarre toujours sans ancienne session.
+  // On conserve la session uniquement après une authentification explicite.
+  const loginSubmit = loginForm.querySelector('button[type="submit"]');
+  loginSubmit.disabled = true;
+  client.auth.signOut({ scope: "local" }).then(({ error }) => {
+    loginSubmit.disabled = false;
+    if (error) showMessage("Impossible de fermer l'ancienne session. Tu peux tout de même saisir tes identifiants.", "error");
+  });
+
   function showMessage(text, type = "info") {
     message.textContent = text;
     message.className = "auth-message " + type;
@@ -122,7 +131,6 @@
     }
   });
 
-  client.auth.getSession().then(({ data }) => {
-    if (data.session) window.location.replace("espace.html");
-  });
+  // Ne jamais rediriger automatiquement vers l'espace avec une session précédente.
+  // Le formulaire de connexion est le seul point d'entrée vers une nouvelle session.
 })();

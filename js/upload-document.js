@@ -102,13 +102,23 @@ card.innerHTML='<div class="upload-analysis-heading"><div><strong>'+esc(item.fil
 '<label>Numéro de séquence<input data-f="sequence" type="number" min="1" max="10" value="'+esc(a.sequence_number||"")+'"></label></div>'+
 '<label class="upload-description-label">Description<input data-f="description" maxlength="1000" value=""></label>'+
 '<p class="upload-summary"><strong>Extrait :</strong> '+esc(a.summary||"Aucun texte exploitable.")+'</p>'+
-'<div class="upload-card-actions"><button class="confirm-one" type="button">Confirmer cette fiche</button><span class="upload-card-note">'+(item.uploaded?"Fichier téléversé":"Téléversement en attente")+'</span></div>';
+'<div class="upload-card-actions"><button class="confirm-one" type="button">Confirmer cette fiche</button><span class="upload-card-note">'+(item.uploaded?"Fichier privé téléversé":"Téléversé uniquement après confirmation")+'</span></div>';
 $("uploadAnalysisResults").append(card);setupCard(card,a);
 card.addEventListener("input",e=>{if(e.target.matches("input,select")){item.confirmed=false;const st=card.querySelector(".upload-analysis-state");st.textContent="À vérifier";st.className="upload-analysis-state warning";card.querySelector(".confirm-one").textContent="Confirmer cette fiche";updateProgress();}});
-card.querySelector(".confirm-one").onclick=()=>{
+card.querySelector(".confirm-one").onclick=async()=>{
 const v=values(card);if(!v.title||!v.classId||!v.offering||!v.subjectId||!v.valid||(v.variantRequired&&!v.variantId)){tell("Complète le titre, la classe, la série/option si nécessaire et une matière autorisée.","error");return;}
-if(!item.uploaded){tell("Le fichier n'a pas été téléversé.","error");return;}
-item.confirmed=!item.confirmed;const st=card.querySelector(".upload-analysis-state");st.textContent=item.confirmed?"Fiche confirmée":"À vérifier";st.className="upload-analysis-state "+(item.confirmed?"success":"warning");card.querySelector(".confirm-one").textContent=item.confirmed?"Modifier la fiche":"Confirmer cette fiche";updateProgress();tell(item.confirmed?"Fiche confirmée.":"Fiche rouverte pour modification.", "success");
+if(item.confirmed){item.confirmed=false;const st=card.querySelector(".upload-analysis-state");st.textContent="À vérifier";st.className="upload-analysis-state warning";card.querySelector(".confirm-one").textContent="Confirmer cette fiche";updateProgress();tell("Fiche rouverte pour modification.","info");return;}
+const btn=card.querySelector(".confirm-one");btn.disabled=true;btn.textContent="Téléversement sécurisé…";
+try{
+const {data:{session:s}}=await db.auth.getSession();if(!s)throw Error("Session expirée.");
+const safe=item.file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
+item.path=s.user.id+"/"+crypto.randomUUID()+"/"+crypto.randomUUID()+"-"+safe;
+const up=await db.storage.from("documents").upload(item.path,item.file,{contentType:item.mime,upsert:false});if(up.error)throw up.error;
+const digest=await crypto.subtle.digest("SHA-256",await item.file.arrayBuffer());item.hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");item.uploaded=true;
+item.confirmed=true;card.querySelector(".upload-card-note").textContent="Fichier privé téléversé et fiche confirmée";
+const st=card.querySelector(".upload-analysis-state");st.textContent="Fiche confirmée";st.className="upload-analysis-state success";btn.textContent="Modifier la fiche";updateProgress();tell("Fiche confirmée. Le fichier est maintenant stocké en privé, sans être encore envoyé à l'administration.","success");
+}catch(e){item.uploaded=false;item.path=null;item.hash=null;tell("Impossible de confirmer cette fiche : "+e.message,"error");}
+finally{btn.disabled=false;if(!item.confirmed)btn.textContent="Confirmer cette fiche";}
 };
 }
 $("analyzeBatchButton").onclick=async()=>{
@@ -118,14 +128,6 @@ const file=files[i],item={file,mime:mime(file),path:null,hash:null,uploaded:fals
 tell("Analyse du fichier "+(i+1)+"/"+files.length+" : "+file.name);
 try{const text=await extract(file);item.analysis=classify(file,text);}catch(e){item.analysis={title:file.name.replace(/\.[^.]+$/,""),document_type:"sujet",warnings:["Analyse locale incomplète : complète manuellement les champs."],summary:e.message};}
 render(item,i);
-try{
-const {data:{session:s}}=await db.auth.getSession();if(!s)throw Error("Session expirée.");
-const safe=file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
-item.path=s.user.id+"/"+crypto.randomUUID()+"/"+crypto.randomUUID()+"-"+safe;
-const up=await db.storage.from("documents").upload(item.path,file,{contentType:item.mime,upsert:false});if(up.error)throw up.error;item.uploaded=true;
-const digest=await crypto.subtle.digest("SHA-256",await file.arrayBuffer());item.hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
-$("uploadAnalysisResults").querySelector('[data-index="'+i+'"] .upload-card-note').textContent="Fichier téléversé et prêt";
-}catch(e){item.error=e.message;$("uploadAnalysisResults").querySelector('[data-index="'+i+'"] .upload-card-note').textContent="Échec du téléversement : "+e.message;}
 }
 tell("Analyse terminée. Confirme chaque fiche séparément. Les fiches non confirmées ne seront jamais envoyées.","success");$("analyzeBatchButton").disabled=false;updateProgress();
 };

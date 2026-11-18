@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/auth.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
   <script src="js/supabase-config.js" defer></script><script src="js/espace.js" defer></script><script src="js/upload-document.js" defer></script><script src="js/admin-documents.js" defer></script><script src="js/password-visibility.js" defer></script>
 </head>
 <body class="auth-page">
@@ -34,10 +36,11 @@
           <p class="upload-help">PDF, JPG, PNG ou WEBP · 20 Mo maximum par fichier · 20 fichiers maximum par dépôt.</p>
           <div class="upload-batch-meta"><strong id="uploadFileCount">0 / 20 fichiers</strong></div>
           <div id="uploadFileList" class="upload-file-list"></div>
-          <button id="analyzeBatchButton" class="auth-submit" type="button" disabled>Analyser les fichiers avec l'IA →</button>
+          <button id="analyzeBatchButton" class="auth-submit" type="button" disabled>Analyser les fichiers gratuitement →</button>
           <p id="uploadFeedback" class="auth-message" role="status" aria-live="polite" hidden></p>
+          <p id="uploadProgress" class="upload-progress" aria-live="polite">0 / 0 fiche confirmée</p>
           <section id="uploadAnalysisResults" class="upload-analysis-results" aria-live="polite"></section>
-          <button id="uploadSubmit" class="auth-submit" type="submit" disabled>Confirmer et envoyer pour validation →</button>
+          <button id="uploadSubmit" class="auth-submit" type="submit" disabled>Envoyer les fiches confirmées pour validation →</button>
         </form>
       </div>
     </section>

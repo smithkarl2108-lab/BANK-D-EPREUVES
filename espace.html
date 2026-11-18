@@ -13,15 +13,28 @@
   <header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">B<span>É</span></span><span class="brand-name">BANK <strong>D'EPREUVES</strong><small>La réussite se prépare</small></span></a><button class="button button-ghost" id="logoutButton" type="button">Déconnexion</button></header>
   <main class="account-layout">
     <span class="eyebrow">ESPACE PERSONNEL</span><h1 id="welcomeTitle">Bienvenue !</h1><p id="accountIdentity" class="account-email"></p>
-    <div class="account-card"><span class="account-icon">▤</span><div><h2>Ton espace est prêt à évoluer</h2><p>Tu pourras bientôt retrouver tes épreuves, tes corrigés et tes favoris depuis cette page.</p></div></div>
-    <div id="accountMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
-    <section id="adminResetPanel" class="account-card" hidden>
-      <h2>Demandes de réinitialisation</h2>
-      <p>Examine les demandes et transmets le mot de passe temporaire à l'utilisateur par un canal privé.</p>
-      <div id="resetRequests"><p>Chargement des demandes…</p></div>
-      <div id="temporaryPasswordBox" class="auth-message success" hidden></div>
+    <section id="changePasswordPanel" class="account-card password-change-card" hidden>
+      <div>
+        <h2>Choisis ton nouveau mot de passe</h2>
+        <p>Pour protéger ton compte, le mot de passe temporaire fourni par l'administration ne peut servir qu'à cette première connexion.</p>
+        <form id="changePasswordForm" class="auth-form">
+          <label for="newPassword">Nouveau mot de passe</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required placeholder="8 caractères minimum">
+          <label for="confirmNewPassword">Confirmer le nouveau mot de passe</label><input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required placeholder="Répète le nouveau mot de passe">
+          <button class="auth-submit" type="submit">Enregistrer mon nouveau mot de passe →</button>
+        </form>
+      </div>
     </section>
-    <a class="button button-primary" href="index.html#bibliotheque">Explorer les épreuves →</a>
+    <div id="accountCard" class="account-card"><span class="account-icon">▤</span><div><h2>Ton espace est prêt à évoluer</h2><p>Tu pourras bientôt retrouver tes épreuves, tes corrigés et tes favoris depuis cette page.</p></div></div>
+    <div id="accountMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
+    <section id="adminResetPanel" class="account-card admin-reset-card" hidden>
+      <div class="admin-reset-content">
+        <h2>Demandes de réinitialisation</h2>
+        <p>Examine les demandes. Après validation, transmets le mot de passe temporaire à l'utilisateur par un canal privé.</p>
+        <div id="resetRequests"><p>Chargement des demandes…</p></div>
+        <div id="temporaryPasswordBox" class="auth-message success" hidden></div>
+      </div>
+    </section>
+    <a id="exploreLink" class="button button-primary" href="index.html#bibliotheque">Explorer les épreuves →</a>
   </main>
 </body>
 </html>

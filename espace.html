@@ -29,23 +29,15 @@
         <h2>Déposer une épreuve</h2>
         <p>Ajoute un sujet, un corrigé ou un cours. Le document sera envoyé à l'administration pour validation avant publication.</p>
         <form id="uploadDocumentForm" class="auth-form">
-          <label for="uploadTitle">Titre du document *</label>
-          <input id="uploadTitle" type="text" maxlength="160" required placeholder="Ex. Épreuve de mathématiques — Terminale C">
-          <label for="uploadDescription">Description (facultatif)</label>
-          <textarea id="uploadDescription" rows="3" maxlength="1000" placeholder="Précisions sur le contenu de l'épreuve"></textarea>
-          <div class="upload-form-grid">
-            <div><label for="uploadType">Type de document *</label><select id="uploadType" required><option value="sujet">Sujet</option><option value="corrige">Corrigé</option><option value="cours">Cours</option><option value="autre">Autre</option></select></div>
-            <div><label for="uploadClass">Classe *</label><select id="uploadClass" required><option value="">Chargement…</option></select></div>
-            <div><label for="uploadSeries">Série (si applicable)</label><select id="uploadSeries"><option value="">Aucune / sans série</option></select></div>
-            <div><label for="uploadSubject">Matière *</label><select id="uploadSubject" required><option value="">Chargement…</option></select></div>
-            <div><label for="uploadYear">Année de l'épreuve</label><input id="uploadYear" type="number" min="1950" max="2100" placeholder="2026"></div>
-            <div><label for="uploadSequence">Numéro de séquence</label><input id="uploadSequence" type="number" min="1" max="12" placeholder="1"></div>
-          </div>
-          <label for="uploadFile">Fichier (PDF ou image) *</label>
-          <input id="uploadFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" required>
-          <p class="upload-help">Formats acceptés : PDF, JPG, PNG, WEBP. Taille maximale : 20 Mo.</p>
-          <button id="uploadSubmit" class="auth-submit" type="submit">Envoyer pour validation →</button>
+          <label for="uploadFiles">Sélectionner les épreuves (20 fichiers maximum) *</label>
+          <input id="uploadFiles" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">
+          <p class="upload-help">PDF, JPG, PNG ou WEBP · 20 Mo maximum par fichier · 20 fichiers maximum par dépôt.</p>
+          <div class="upload-batch-meta"><strong id="uploadFileCount">0 / 20 fichiers</strong></div>
+          <div id="uploadFileList" class="upload-file-list"></div>
+          <button id="analyzeBatchButton" class="auth-submit" type="button" disabled>Analyser les fichiers avec l'IA →</button>
           <p id="uploadFeedback" class="auth-message" role="status" aria-live="polite" hidden></p>
+          <section id="uploadAnalysisResults" class="upload-analysis-results" aria-live="polite"></section>
+          <button id="uploadSubmit" class="auth-submit" type="submit" disabled>Confirmer et envoyer pour validation →</button>
         </form>
       </div>
     </section>

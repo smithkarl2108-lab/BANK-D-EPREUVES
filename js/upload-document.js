@@ -11,22 +11,23 @@
   if(!profile?.is_active||!["admin","teacher"].includes(profile.role))return;
   panel.hidden=false;
   const $=id=>document.getElementById(id), files=[], items=[];
-  let catalog={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[]};
+  let catalog={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],offeringSubjects:[]};
   const tell=(s,t="info")=>{$("uploadFeedback").textContent=s;$("uploadFeedback").className="auth-message "+t;$("uploadFeedback").hidden=false;};
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const mime=f=>f.type||({pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[f.name.split(".").pop().toLowerCase()]||"");
   const options=(arr,empty)=>'<option value="">'+empty+'</option>'+arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("");
   try{
-    const [a,b,c,d,e,f]=await Promise.all([
+    const [a,b,c,d,e,f,g]=await Promise.all([
       db.from("school_subsystems").select("id,code,name").eq("is_active",true).order("name"),
       db.from("school_classes").select("id,name,level_order,subsystem_id,code").eq("is_active",true).order("level_order"),
       db.from("series").select("id,name,subsystem_id").eq("is_active",true).order("name"),
       db.from("school_variants").select("id,name,code").eq("is_active",true).order("name"),
       db.from("class_offerings").select("id,class_id,series_id,variant_id,display_name").eq("is_active",true).order("display_name"),
-      db.from("subjects").select("id,name").eq("is_active",true).order("name")
+      db.from("subjects").select("id,name").eq("is_active",true).order("name"),
+      db.from("class_offering_subjects").select("offering_id,subject_id,is_optional,note").eq("is_active",true)
     ]);
-    if(a.error||b.error||c.error||d.error||e.error||f.error)throw a.error||b.error||c.error||d.error||e.error||f.error;
-    catalog={subsystems:a.data||[],classes:b.data||[],series:c.data||[],variants:d.data||[],offerings:e.data||[],subjects:f.data||[]};
+    if(a.error||b.error||c.error||d.error||e.error||f.error||g.error)throw a.error||b.error||c.error||d.error||e.error||f.error||g.error;
+    catalog={subsystems:a.data||[],classes:b.data||[],series:c.data||[],variants:d.data||[],offerings:e.data||[],subjects:f.data||[],offeringSubjects:g.data||[]};
   }catch(e){tell("Chargement du référentiel impossible : "+e.message,"error");return;}
 
   function drawFiles(){
@@ -61,6 +62,7 @@
     const classHint=card.querySelector('[data-hint="class"]');
     const seriesHint=card.querySelector('[data-hint="series"]');
     const variantWrap=card.querySelector('[data-wrap="variant"]');
+    const subjectSelect=card.querySelector('[data-f="subject"]');
     const find=(arr,n)=>arr.find(x=>String(x.name).toLowerCase()===String(n||"").trim().toLowerCase());
 
     function refreshClasses(preferredClass){
@@ -89,13 +91,27 @@
       variantWrap.hidden=!available.length;
       variantSelect.innerHTML=options(available,"Aucune option linguistique");
       variantSelect.disabled=!available.length;
+      variantSelect.required=available.length>0;
       if(preferredVariant&&ids.includes(preferredVariant))variantSelect.value=preferredVariant;
       classHint.textContent=classSelect.value?"Classe sélectionnée":"Choisis d'abord un sous-système.";
-      seriesHint.textContent=available.length?"Les options linguistiques sont proposées uniquement pour la série A.":(seriesSelect.disabled?"Cette classe n'a pas de série.":"Choisis la série.");
+      seriesHint.textContent=available.length?"Choisis obligatoirement une option linguistique pour la série A.":(seriesSelect.disabled?"Cette classe n'a pas de série.":"Choisis la série.");
+      refreshSubjects();
+    }
+    function refreshSubjects(preferredSubject){
+      const cid=classSelect.value,sid=seriesSelect.value||null,vid=variantSelect.value||null;
+      const offering=catalog.offerings.find(x=>x.class_id===cid&&x.series_id===sid&&x.variant_id===vid);
+      const links=catalog.offeringSubjects.filter(x=>x.offering_id===offering?.id);
+      const rows=links.map(link=>{const subject=catalog.subjects.find(s=>s.id===link.subject_id);return subject?{id:subject.id,name:subject.name+(link.is_optional?" — Optionnelle":"")}:null;}).filter(Boolean);
+      subjectSelect.innerHTML=options(rows,"Choisir la matière");
+      subjectSelect.disabled=!rows.length;
+      if(preferredSubject&&rows.some(x=>x.id===preferredSubject))subjectSelect.value=preferredSubject;
+      const subjectHint=card.querySelector('[data-hint="subject"]');
+      if(subjectHint)subjectHint.textContent=links.length?"Matières filtrées selon la classe, la série et l’option.":"Choisis la classe et la série pour afficher les matières disponibles.";
     }
     subsystem.addEventListener("change",()=>refreshClasses());
     classSelect.addEventListener("change",()=>refreshSeries());
     seriesSelect.addEventListener("change",()=>refreshVariants());
+    variantSelect.addEventListener("change",()=>refreshSubjects());
     const aiClass=find(catalog.classes,a.class_name);
     if(aiClass){
       subsystem.value=aiClass.subsystem_id;
@@ -110,6 +126,8 @@
       const aiVariant=find(catalog.variants,a.language_option);
       if(aiVariant)variantSelect.value=aiVariant.id;
     }
+    const aiSubject=find(catalog.subjects,a.subject_name);
+    refreshSubjects(aiSubject?.id);
   }
 
   function renderCard(item,i){
@@ -126,7 +144,7 @@
         <label>Classe *<select data-f="class" required disabled><option value="">Choisir d'abord le sous-système</option></select><small data-hint="class">Choisis d'abord un sous-système.</small></label>
         <label>Série<select data-f="series" disabled><option value="">Aucune série</option></select><small data-hint="series">Choisis la classe.</small></label>
         <label data-wrap="variant" hidden>Option linguistique<select data-f="variant" disabled><option value="">Aucune option linguistique</option></select></label>
-        <label>Matière *<select data-f="subject" required>${options(catalog.subjects,"Choisir la matière")}</select></label>
+        <label>Matière *<select data-f="subject" required disabled><option value="">Choisis d’abord la classe</option></select><small data-hint="subject">Les matières dépendront de la classe et de la série.</small></label>
         <label>Année<input data-f="year" type="number" min="1950" max="2100" value="${esc(a.exam_year||"")}"></label>
         <label>Numéro de séquence<input data-f="sequence" type="number" min="1" max="10" value="${esc(a.sequence_number||"")}"></label>
       </div>
@@ -135,8 +153,6 @@
       ${!catalog.classes.length||!catalog.subjects.length?'<p class="upload-analysis-warning">Le référentiel des classes et matières doit être configuré avant la finalisation.</p>':""}`;
     $("uploadAnalysisResults").append(card);
     setupClassification(card,a);
-    const subject=catalog.subjects.find(x=>x.name.toLowerCase()===String(a.subject_name||"").trim().toLowerCase());
-    if(subject)card.querySelector('[data-f="subject"]').value=subject.id;
   }
 
   $("analyzeBatchButton").addEventListener("click",async()=>{
@@ -176,7 +192,8 @@
       const val=k=>card.querySelector('[data-f="'+k+'"]').value.trim();
       const classId=val("class"),seriesId=val("series")||null,variantId=val("variant")||null;
       const offering=catalog.offerings.find(x=>x.class_id===classId&&x.series_id===seriesId&&x.variant_id===variantId);
-      if(!val("title")||!classId||!val("subject")||!offering){problems.push(item.file.name+" : titre, classe, série ou matière invalide/incomplet.");continue;}
+      const allowedSubject=offering&&catalog.offeringSubjects.some(x=>x.offering_id===offering.id&&x.subject_id===val("subject"));
+      if(!val("title")||!classId||!val("subject")||!offering||!allowedSubject||(card.querySelector('[data-f="variant"]').required&&!variantId)){problems.push(item.file.name+" : titre, classe, série, option ou matière invalide/incomplet.");continue;}
       try{
         const {data:doc,error}=await db.from("documents").insert({
           title:val("title"),description:val("description")||null,document_type:val("type"),status:"pending",

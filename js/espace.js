@@ -1,4 +1,4 @@
-/* Espace privé et interface de traitement des demandes de reset. */
+/* Espace privé, changement obligatoire après reset et gestion admin. */
 "use strict";
 (async () => {
   const config = window.BANK_SUPABASE_CONFIG;
@@ -48,7 +48,7 @@
       headers: {
         "Content-Type": "application/json",
         apikey: config.publishableKey,
-        Authorization: "Bearer " + session.access_token
+        Authorization: "Bearer " + (client.auth.getSession ? session.access_token : ""),
       },
       body: JSON.stringify(payload)
     });
@@ -57,10 +57,56 @@
     return data;
   }
 
+  if (session.user.app_metadata?.must_change_password === true) {
+    document.getElementById("changePasswordPanel").hidden = false;
+    document.getElementById("accountCard").hidden = true;
+    document.getElementById("exploreLink").hidden = true;
+    document.getElementById("changePasswordForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const password = document.getElementById("newPassword").value;
+      const confirmation = document.getElementById("confirmNewPassword").value;
+      if (password !== confirmation) return say("Les deux mots de passe ne correspondent pas.", "error");
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        const { data: { session: currentSession } } = await client.auth.getSession();
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: config.publishableKey,
+            Authorization: "Bearer " + currentSession.access_token,
+          },
+          body: JSON.stringify({ action: "change-password", password })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Le changement de mot de passe a échoué.");
+        say(result.message, "success");
+        await client.auth.refreshSession();
+        window.location.reload();
+      } catch (error) {
+        say(error.message, "error");
+        button.disabled = false;
+      }
+    });
+    return;
+  }
+
   async function loadRequests() {
     const target = document.getElementById("resetRequests");
     try {
-      const result = await accountCall({ action: "admin-list" });
+      const { data: { session: currentSession } } = await client.auth.getSession();
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: config.publishableKey,
+          Authorization: "Bearer " + currentSession.access_token,
+        },
+        body: JSON.stringify({ action: "admin-list" })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Impossible de charger les demandes.");
       if (!result.requests.length) {
         target.textContent = "Aucune demande en attente.";
         return;
@@ -69,9 +115,7 @@
       result.requests.forEach((item) => {
         const user = item.profiles || {};
         const row = document.createElement("div");
-        row.className = "account-card";
-        row.style.marginTop = "12px";
-
+        row.className = "reset-request-row";
         const info = document.createElement("div");
         const title = document.createElement("strong");
         title.textContent = user.display_name || user.username || "Utilisateur";
@@ -80,19 +124,20 @@
           (user.phone_number ? " · " + user.phone_number : " · Aucun téléphone renseigné");
         info.append(title, detail);
 
+        const actions = document.createElement("div");
+        actions.className = "reset-request-actions";
         const approve = document.createElement("button");
         approve.type = "button";
         approve.className = "auth-submit";
         approve.textContent = "Réinitialiser";
         approve.addEventListener("click", () => review(item.id, "approve", approve));
-
         const reject = document.createElement("button");
         reject.type = "button";
         reject.className = "text-action";
         reject.textContent = "Refuser";
         reject.addEventListener("click", () => review(item.id, "reject", reject));
-
-        row.append(info, approve, reject);
+        actions.append(approve, reject);
+        row.append(info, actions);
         target.append(row);
       });
     } catch (error) {
@@ -103,13 +148,35 @@
   async function review(id, decision, button) {
     button.disabled = true;
     try {
-      const result = await accountCall({ action: "admin-reset", requestId: id, decision });
+      const { data: { session: currentSession } } = await client.auth.getSession();
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: config.publishableKey,
+          Authorization: "Bearer " + currentSession.access_token,
+        },
+        body: JSON.stringify({ action: "admin-reset", requestId: id, decision })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "La demande n'a pas pu être traitée.");
       if (result.temporaryPassword) {
         const box = document.getElementById("temporaryPasswordBox");
         box.hidden = false;
-        box.textContent =
-          "Mot de passe temporaire (copie-le et transmets-le une seule fois) : " +
-          result.temporaryPassword;
+        box.replaceChildren();
+        const label = document.createElement("p");
+        label.textContent = "Mot de passe temporaire — copie-le maintenant et transmets-le une seule fois à l'utilisateur :";
+        const code = document.createElement("code");
+        code.textContent = result.temporaryPassword;
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.className = "text-action";
+        copy.textContent = "Copier le mot de passe";
+        copy.addEventListener("click", async () => {
+          await navigator.clipboard.writeText(result.temporaryPassword);
+          copy.textContent = "Copié";
+        });
+        box.append(label, code, copy);
       }
       say(result.message, "success");
       await loadRequests();

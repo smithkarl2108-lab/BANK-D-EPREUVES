@@ -72,7 +72,7 @@
   async function loadPending() {
     list.textContent = "Chargement…";
     const { data, error } = await client.from("documents")
-      .select("id,title,description,document_type,exam_year,sequence_number,created_at,school_classes(name),series(name),subjects(name)")
+      .select("id,title,description,document_type,exam_year,sequence_number,created_at,school_classes(name),series(name),subjects(name),document_files(original_name,storage_path,bucket_id,mime_type)")
       .eq("status", "pending").order("created_at", { ascending: true });
     if (error) {
       list.textContent = "Impossible de charger les documents : " + error.message;
@@ -96,13 +96,31 @@
       meta.textContent = [type, doc.school_classes?.name, doc.series?.name, doc.subjects?.name, doc.exam_year, doc.sequence_number ? "Séquence " + doc.sequence_number : ""].filter(Boolean).join(" · ");
       const description = document.createElement("p");
       description.textContent = doc.description || "Aucune description.";
+      const fileInfo = document.createElement("p");
+      const attached = doc.document_files?.[0];
+      if (attached) {
+        const { data: signed, error: signedError } = await client.storage
+          .from(attached.bucket_id).createSignedUrl(attached.storage_path, 3600);
+        if (!signedError && signed?.signedUrl) {
+          const fileLink = document.createElement("a");
+          fileLink.href = signed.signedUrl;
+          fileLink.target = "_blank";
+          fileLink.rel = "noopener noreferrer";
+          fileLink.textContent = "Consulter le fichier : " + (attached.original_name || "ouvrir le document");
+          fileInfo.append(fileLink);
+        } else {
+          fileInfo.textContent = "Fichier joint, mais aperçu temporairement indisponible.";
+        }
+      } else {
+        fileInfo.textContent = "Aucun fichier joint détecté.";
+      }
       const actions = document.createElement("div");
       actions.className = "pending-document-actions";
       actions.append(
         makeAction("Publier", "document-approve", (button) => moderate(doc.id, "publish", button)),
         makeAction("Refuser", "document-reject", (button) => moderate(doc.id, "reject", button))
       );
-      card.append(title, meta, description, actions);
+      card.append(title, meta, description, fileInfo, actions);
       list.append(card);
     });
   }

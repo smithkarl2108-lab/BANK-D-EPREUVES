@@ -78,7 +78,7 @@
     $("analyzeBatchButton").disabled=true;$("uploadSubmit").disabled=true;
     $("uploadAnalysisResults").replaceChildren();items.splice(0);
     for(let i=0;i<files.length;i++){
-      const f=files[i],item={file:f,mime:mime(f),path:null,hash:null,analysis:null,error:null};
+      const f=files[i],item={file:f,mime:mime(f),path:null,hash:null,analysis:null,error:null,uploaded:false};
       tell("Analyse du fichier "+(i+1)+"/"+files.length+" : "+f.name);
       try{
         const {data:{session:s}}=await db.auth.getSession();if(!s)throw Error("Session expirée.");
@@ -86,6 +86,7 @@
         item.path=s.user.id+"/"+folder+"/"+crypto.randomUUID()+"-"+safe;
         const up=await db.storage.from("documents").upload(item.path,f,{contentType:item.mime,upsert:false});
         if(up.error)throw up.error;
+        item.uploaded=true;
         const digest=await crypto.subtle.digest("SHA-256",await f.arrayBuffer());
         item.hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
         const res=await fetch(cfg.url+"/functions/v1/analyze-document",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+s.access_token,"apikey":cfg.publishableKey},body:JSON.stringify({storagePath:item.path,mimeType:item.mime,fileName:f.name})});
@@ -104,6 +105,7 @@
     let sent=0;const problems=[];
     for(let i=0;i<items.length;i++){
       const item=items[i],card=$("uploadAnalysisResults").querySelector('[data-index="'+i+'"]');
+      if(!item.uploaded){problems.push(item.file.name+" : le fichier n’a pas pu être téléversé.");continue;}
       const val=k=>card.querySelector('[data-f="'+k+'"]').value.trim();
       if(!val("title")||!val("class")||!val("subject")){problems.push(item.file.name+" : titre, classe ou matière manquant.");continue;}
       try{

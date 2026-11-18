@@ -1,214 +1,152 @@
-/* Dépôt intelligent : 20 fichiers maximum, analyse indépendante et contrôle humain. */
 "use strict";
-(async () => {
-  const panel=document.getElementById("uploadDocumentPanel"), form=document.getElementById("uploadDocumentForm");
-  if(!panel||!form)return;
-  const cfg=window.BANK_SUPABASE_CONFIG, lib=window.supabase;
-  if(!cfg||!lib?.createClient)return;
-  const db=lib.createClient(cfg.url,cfg.publishableKey);
-  const {data:{session}}=await db.auth.getSession(); if(!session)return;
-  const {data:profile}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
-  if(!profile?.is_active||!["admin","teacher"].includes(profile.role))return;
-  panel.hidden=false;
-  const $=id=>document.getElementById(id), files=[], items=[];
-  let catalog={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],offeringSubjects:[]};
-  const tell=(s,t="info")=>{$("uploadFeedback").textContent=s;$("uploadFeedback").className="auth-message "+t;$("uploadFeedback").hidden=false;};
-  const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const mime=f=>f.type||({pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[f.name.split(".").pop().toLowerCase()]||"");
-  const options=(arr,empty)=>'<option value="">'+empty+'</option>'+arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("");
-  try{
-    const [a,b,c,d,e,f,g]=await Promise.all([
-      db.from("school_subsystems").select("id,code,name").eq("is_active",true).order("name"),
-      db.from("school_classes").select("id,name,level_order,subsystem_id,code").eq("is_active",true).order("level_order"),
-      db.from("series").select("id,name,subsystem_id").eq("is_active",true).order("name"),
-      db.from("school_variants").select("id,name,code").eq("is_active",true).order("name"),
-      db.from("class_offerings").select("id,class_id,series_id,variant_id,display_name").eq("is_active",true).order("display_name"),
-      db.from("subjects").select("id,name").eq("is_active",true).order("name"),
-      db.from("class_offering_subjects").select("offering_id,subject_id,is_optional,note").eq("is_active",true)
-    ]);
-    if(a.error||b.error||c.error||d.error||e.error||f.error||g.error)throw a.error||b.error||c.error||d.error||e.error||f.error||g.error;
-    catalog={subsystems:a.data||[],classes:b.data||[],series:c.data||[],variants:d.data||[],offerings:e.data||[],subjects:f.data||[],offeringSubjects:g.data||[]};
-  }catch(e){tell("Chargement du référentiel impossible : "+e.message,"error");return;}
-
-  function drawFiles(){
-    $("uploadFileList").replaceChildren();
-    files.forEach((f,i)=>{
-      const row=document.createElement("div");row.className="upload-file-row";
-      const name=document.createElement("span");name.textContent=f.name+" · "+(f.size/1048576).toFixed(2)+" Mo";
-      const btn=document.createElement("button");btn.type="button";btn.textContent="Retirer";
-      btn.onclick=()=>{files.splice(i,1);drawFiles();};
-      row.append(name,btn);$("uploadFileList").append(row);
-    });
-    $("uploadFileCount").textContent=files.length+" / 20 fichiers";
-    $("analyzeBatchButton").disabled=!files.length;
-  }
-
-  $("uploadFiles").addEventListener("change",()=>{
-    const incoming=Array.from($("uploadFiles").files||[]);
-    if(files.length+incoming.length>20){tell("20 fichiers maximum par dépôt.","error");$("uploadFiles").value="";return;}
-    for(const f of incoming){
-      if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(mime(f))){tell("Format non accepté : "+f.name,"error");continue;}
-      if(!f.size||f.size>20*1048576){tell(f.name+" est vide ou dépasse 20 Mo.","error");continue;}
-      if(!files.some(x=>x.name===f.name&&x.size===f.size))files.push(f);
-    }
-    $("uploadFiles").value="";drawFiles();
-  });
-
-  function setupClassification(card,a){
-    const subsystem=card.querySelector('[data-f="subsystem"]');
-    const classSelect=card.querySelector('[data-f="class"]');
-    const seriesSelect=card.querySelector('[data-f="series"]');
-    const variantSelect=card.querySelector('[data-f="variant"]');
-    const classHint=card.querySelector('[data-hint="class"]');
-    const seriesHint=card.querySelector('[data-hint="series"]');
-    const variantWrap=card.querySelector('[data-wrap="variant"]');
-    const subjectSelect=card.querySelector('[data-f="subject"]');
-    const find=(arr,n)=>arr.find(x=>String(x.name).toLowerCase()===String(n||"").trim().toLowerCase());
-
-    function refreshClasses(preferredClass){
-      const sid=subsystem.value;
-      const rows=catalog.classes.filter(x=>x.subsystem_id===sid);
-      classSelect.innerHTML=options(rows,"Choisir la classe");
-      classSelect.disabled=!sid;
-      if(preferredClass&&rows.some(x=>x.id===preferredClass))classSelect.value=preferredClass;
-      refreshSeries();
-    }
-    function refreshSeries(preferredSeries,preferredVariant){
-      const cid=classSelect.value;
-      const rows=catalog.offerings.filter(x=>x.class_id===cid&&x.series_id);
-      const ids=[...new Set(rows.map(x=>x.series_id))];
-      const available=catalog.series.filter(x=>ids.includes(x.id));
-      seriesSelect.innerHTML=options(available,"Aucune série / orientation");
-      seriesSelect.disabled=!available.length;
-      if(preferredSeries&&ids.includes(preferredSeries))seriesSelect.value=preferredSeries;
-      refreshVariants(preferredVariant);
-    }
-    function refreshVariants(preferredVariant){
-      const cid=classSelect.value,sid=seriesSelect.value;
-      const rows=catalog.offerings.filter(x=>x.class_id===cid&&x.series_id===sid&&x.variant_id);
-      const ids=[...new Set(rows.map(x=>x.variant_id))];
-      const available=catalog.variants.filter(x=>ids.includes(x.id));
-      variantWrap.hidden=!available.length;
-      variantSelect.innerHTML=options(available,"Aucune option linguistique");
-      variantSelect.disabled=!available.length;
-      variantSelect.required=available.length>0;
-      if(preferredVariant&&ids.includes(preferredVariant))variantSelect.value=preferredVariant;
-      classHint.textContent=classSelect.value?"Classe sélectionnée":"Choisis d'abord un sous-système.";
-      seriesHint.textContent=available.length?"Choisis obligatoirement une option linguistique pour la série A.":(seriesSelect.disabled?"Cette classe n'a pas de série.":"Choisis la série.");
-      refreshSubjects();
-    }
-    function refreshSubjects(preferredSubject){
-      const cid=classSelect.value,sid=seriesSelect.value||null,vid=variantSelect.value||null;
-      const offering=catalog.offerings.find(x=>x.class_id===cid&&x.series_id===sid&&x.variant_id===vid);
-      const links=catalog.offeringSubjects.filter(x=>x.offering_id===offering?.id);
-      const rows=links.map(link=>{const subject=catalog.subjects.find(s=>s.id===link.subject_id);return subject?{id:subject.id,name:subject.name+(link.is_optional?" — Optionnelle":"")}:null;}).filter(Boolean);
-      subjectSelect.innerHTML=options(rows,"Choisir la matière");
-      subjectSelect.disabled=!rows.length;
-      if(preferredSubject&&rows.some(x=>x.id===preferredSubject))subjectSelect.value=preferredSubject;
-      const subjectHint=card.querySelector('[data-hint="subject"]');
-      if(subjectHint)subjectHint.textContent=links.length?"Matières filtrées selon la classe, la série et l’option.":"Choisis la classe et la série pour afficher les matières disponibles.";
-    }
-    subsystem.addEventListener("change",()=>refreshClasses());
-    classSelect.addEventListener("change",()=>refreshSeries());
-    seriesSelect.addEventListener("change",()=>refreshVariants());
-    variantSelect.addEventListener("change",()=>refreshSubjects());
-    const aiClass=find(catalog.classes,a.class_name);
-    if(aiClass){
-      subsystem.value=aiClass.subsystem_id;
-      refreshClasses(aiClass.id);
-      const aiSeries=find(catalog.series,a.series_name);
-      if(aiSeries)refreshSeries(aiSeries.id);
-    }else{
-      subsystem.value="";
-      refreshClasses();
-    }
-    if(variantWrap.hidden===false&&a.language_option){
-      const aiVariant=find(catalog.variants,a.language_option);
-      if(aiVariant)variantSelect.value=aiVariant.id;
-    }
-    const aiSubject=find(catalog.subjects,a.subject_name);
-    refreshSubjects(aiSubject?.id);
-  }
-
-  function renderCard(item,i){
-    const a=item.analysis||{}, warnings=Array.isArray(a.warnings)?a.warnings:[];
-    const card=document.createElement("article");card.className="upload-analysis-card";card.dataset.index=i;
-    card.innerHTML=`
-      <div class="upload-analysis-heading"><div><strong>${esc(item.file.name)}</strong><small>${item.error?"Analyse à compléter manuellement":"Confiance IA : "+Number(a.confidence||0)+" %"}</small></div><span class="upload-analysis-state ${item.error||warnings.length?"warning":"success"}">${item.error||warnings.length?"À vérifier":"Analyse effectuée"}</span></div>
-      ${item.error?'<p class="upload-analysis-warning">'+esc(item.error)+'</p>':""}
-      ${warnings.length?'<ul class="upload-analysis-warning">'+warnings.map(w=>"<li>"+esc(w)+"</li>").join("")+"</ul>":""}
-      <div class="upload-analysis-grid">
-        <label>Titre proposé *<input data-f="title" maxlength="160" required value="${esc(a.title||"")}"></label>
-        <label>Type<select data-f="type">${["sujet","corrige","cours","autre"].map(v=>'<option value="'+v+'"'+((a.document_type||"sujet")===v?" selected":"")+'>'+({sujet:"Sujet",corrige:"Corrigé",cours:"Cours",autre:"Autre"}[v])+"</option>").join("")}</select></label>
-        <label>Sous-système *<select data-f="subsystem" required>${options(catalog.subsystems,"Choisir le sous-système")}</select></label>
-        <label>Classe *<select data-f="class" required disabled><option value="">Choisir d'abord le sous-système</option></select><small data-hint="class">Choisis d'abord un sous-système.</small></label>
-        <label>Série / orientation<select data-f="series" disabled><option value="">Aucune série / orientation</option></select><small data-hint="series">Choisis la classe.</small></label>
-        <label data-wrap="variant" hidden>Option linguistique<select data-f="variant" disabled><option value="">Aucune option linguistique</option></select></label>
-        <label>Matière *<select data-f="subject" required disabled><option value="">Choisis d’abord la classe</option></select><small data-hint="subject">Les matières dépendront de la classe et de la série.</small></label>
-        <label>Année<input data-f="year" type="number" min="1950" max="2100" value="${esc(a.exam_year||"")}"></label>
-        <label>Numéro de séquence<input data-f="sequence" type="number" min="1" max="10" value="${esc(a.sequence_number||"")}"></label>
-      </div>
-      <label class="upload-description-label">Description<input data-f="description" maxlength="1000" value="${esc(a.description||"")}"></label>
-      <p class="upload-summary"><strong>Résumé :</strong> ${esc(a.extracted_text_summary||"Aucun résumé disponible : vérification manuelle nécessaire.")}</p>
-      ${!catalog.classes.length||!catalog.subjects.length?'<p class="upload-analysis-warning">Le référentiel des classes et matières doit être configuré avant la finalisation.</p>':""}`;
-    $("uploadAnalysisResults").append(card);
-    setupClassification(card,a);
-  }
-
-  $("analyzeBatchButton").addEventListener("click",async()=>{
-    if(!files.length)return;
-    $("analyzeBatchButton").disabled=true;$("uploadSubmit").disabled=true;
-    $("uploadAnalysisResults").replaceChildren();items.splice(0);
-    for(let i=0;i<files.length;i++){
-      const f=files[i],item={file:f,mime:mime(f),path:null,hash:null,analysis:null,error:null,uploaded:false};
-      tell("Analyse du fichier "+(i+1)+"/"+files.length+" : "+f.name);
-      try{
-        const {data:{session:s}}=await db.auth.getSession();if(!s)throw Error("Session expirée.");
-        const folder=crypto.randomUUID(),safe=f.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
-        item.path=s.user.id+"/"+folder+"/"+crypto.randomUUID()+"-"+safe;
-        const up=await db.storage.from("documents").upload(item.path,f,{contentType:item.mime,upsert:false});
-        if(up.error)throw up.error;
-        item.uploaded=true;
-        const digest=await crypto.subtle.digest("SHA-256",await f.arrayBuffer());
-        item.hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
-        const res=await fetch(cfg.url+"/functions/v1/analyze-document",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+s.access_token,"apikey":cfg.publishableKey},body:JSON.stringify({storagePath:item.path,mimeType:item.mime,fileName:f.name})});
-        const payload=await res.json();if(!res.ok||!payload.success)throw Error(payload.error||"Analyse IA indisponible.");
-        item.analysis=payload.analysis;
-      }catch(e){item.error=e.message||"Analyse impossible.";item.analysis={title:f.name.replace(/\.[^.]+$/,""),document_type:"sujet",warnings:["Complète les champs manuellement."]};}
-      items.push(item);renderCard(item,i);
-    }
-    tell("Analyse terminée. Vérifie individuellement chaque fiche avant l'envoi.","success");
-    $("uploadSubmit").disabled=false;$("analyzeBatchButton").disabled=false;
-  });
-
-  form.addEventListener("submit",async ev=>{
-    ev.preventDefault();if(!items.length)return tell("Analyse d'abord les fichiers sélectionnés.","error");
-    $("uploadSubmit").disabled=true;$("analyzeBatchButton").disabled=true;
-    const {data:{session:s}}=await db.auth.getSession();if(!s){tell("Session expirée. Reconnecte-toi.","error");return;}
-    let sent=0;const problems=[];
-    for(let i=0;i<items.length;i++){
-      const item=items[i],card=$("uploadAnalysisResults").querySelector('[data-index="'+i+'"]');
-      if(!item.uploaded){problems.push(item.file.name+" : le fichier n’a pas pu être téléversé.");continue;}
-      const val=k=>card.querySelector('[data-f="'+k+'"]').value.trim();
-      const classId=val("class"),seriesId=val("series")||null,variantId=val("variant")||null;
-      const offering=catalog.offerings.find(x=>x.class_id===classId&&x.series_id===seriesId&&x.variant_id===variantId);
-      const allowedSubject=offering&&catalog.offeringSubjects.some(x=>x.offering_id===offering.id&&x.subject_id===val("subject"));
-      if(!val("title")||!classId||!val("subject")||!offering||!allowedSubject||(card.querySelector('[data-f="variant"]').required&&!variantId)){problems.push(item.file.name+" : titre, classe, série, option ou matière invalide/incomplet.");continue;}
-      try{
-        const {data:doc,error}=await db.from("documents").insert({
-          title:val("title"),description:val("description")||null,document_type:val("type"),status:"pending",
-          school_class_id:classId,series_id:seriesId,class_offering_id:offering.id,subject_id:val("subject"),
-          exam_year:val("year")?Number(val("year")):null,sequence_number:val("sequence")?Number(val("sequence")):null,uploader_id:s.user.id
-        }).select("id").single();
-        if(error)throw error;
-        const f=await db.from("document_files").insert({document_id:doc.id,uploader_id:s.user.id,bucket_id:"documents",storage_path:item.path,original_name:item.file.name,mime_type:item.mime,file_size:item.file.size,sha256:item.hash});
-        if(f.error){await db.from("documents").delete().eq("id",doc.id);throw f.error;}
-        sent++;
-      }catch(e){problems.push(item.file.name+" : "+e.message);}
-    }
-    tell(sent+" fichier(s) transmis pour validation."+(problems.length?" À corriger : "+problems.join(" "):""),problems.length?"error":"success");
-    if(sent===items.length){files.splice(0);items.splice(0);$("uploadAnalysisResults").replaceChildren();drawFiles();}
-    $("uploadSubmit").disabled=false;$("analyzeBatchButton").disabled=!files.length;
-  });
-  drawFiles();
+(async()=>{
+const panel=document.getElementById("uploadDocumentPanel"),form=document.getElementById("uploadDocumentForm");
+if(!panel||!form)return;
+const cfg=window.BANK_SUPABASE_CONFIG,lib=window.supabase;if(!cfg||!lib?.createClient)return;
+const db=lib.createClient(cfg.url,cfg.publishableKey),$=id=>document.getElementById(id);
+const {data:{session}}=await db.auth.getSession();if(!session)return;
+const {data:profile}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
+if(!profile?.is_active||!["admin","teacher"].includes(profile.role))return;
+panel.hidden=false;
+const files=[],items=[];
+let cat={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],links:[]},worker=null;
+const tell=(s,t)=>{$("uploadFeedback").textContent=s;$("uploadFeedback").className="auth-message "+(t||"info");$("uploadFeedback").hidden=false;};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const mime=f=>f.type||({pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[f.name.split(".").pop().toLowerCase()]||"");
+const opts=(arr,label)=>'<option value="">'+label+'</option>'+arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("");
+const byName=(arr,n)=>arr.find(x=>norm(x.name)===norm(n));
+try{
+const rs=await Promise.all([
+db.from("school_subsystems").select("id,name").eq("is_active",true).order("name"),
+db.from("school_classes").select("id,name,subsystem_id,code").eq("is_active",true).order("level_order"),
+db.from("series").select("id,name").eq("is_active",true).order("name"),
+db.from("school_variants").select("id,name").eq("is_active",true).order("name"),
+db.from("class_offerings").select("id,class_id,series_id,variant_id").eq("is_active",true),
+db.from("subjects").select("id,name").eq("is_active",true).order("name"),
+db.from("class_offering_subjects").select("offering_id,subject_id,is_optional").eq("is_active",true)]);
+for(const r of rs)if(r.error)throw r.error;
+cat={subsystems:rs[0].data||[],classes:rs[1].data||[],series:rs[2].data||[],variants:rs[3].data||[],offerings:rs[4].data||[],subjects:rs[5].data||[],links:rs[6].data||[]};
+}catch(e){tell("Chargement du référentiel impossible : "+e.message,"error");return;}
+function drawFiles(){
+$("uploadFileList").replaceChildren();
+files.forEach((f,i)=>{const row=document.createElement("div");row.className="upload-file-row";const name=document.createElement("span");name.textContent=f.name+" · "+(f.size/1048576).toFixed(2)+" Mo";const b=document.createElement("button");b.type="button";b.textContent="Retirer";b.onclick=()=>{files.splice(i,1);drawFiles();};row.append(name,b);$("uploadFileList").append(row);});
+$("uploadFileCount").textContent=files.length+" / 20 fichiers";$("analyzeBatchButton").disabled=!files.length;
+}
+$("uploadFiles").addEventListener("change",()=>{
+const incoming=Array.from($("uploadFiles").files||[]);
+if(files.length+incoming.length>20){tell("20 fichiers maximum par dépôt.","error");$("uploadFiles").value="";return;}
+incoming.forEach(f=>{if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(mime(f)))return tell("Format non accepté : "+f.name,"error");if(!f.size||f.size>20*1048576)return tell(f.name+" est vide ou dépasse 20 Mo.","error");if(!files.some(x=>x.name===f.name&&x.size===f.size))files.push(f);});
+$("uploadFiles").value="";drawFiles();
+});
+async function getWorker(){
+if(worker)return worker;if(!window.Tesseract?.createWorker)throw Error("Moteur OCR non chargé. Vérifie ta connexion et actualise la page.");
+tell("Préparation du moteur OCR gratuit…");worker=await Tesseract.createWorker("fra+eng",1,{logger:m=>{if(m.status==="recognizing text")tell("OCR en cours : "+Math.round((m.progress||0)*100)+" %");}});return worker;
+}
+async function extract(file){
+if(file.type==="application/pdf"||file.name.toLowerCase().endsWith(".pdf")){
+if(!window.pdfjsLib)throw Error("Lecteur PDF non chargé.");
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,parts=[],scanned=[];
+for(let n=1;n<=Math.min(pdf.numPages,12);n++){tell("Lecture du PDF : page "+n+"/"+Math.min(pdf.numPages,12));const p=await pdf.getPage(n),tc=await p.getTextContent(),t=tc.items.map(x=>x.str||"").join(" ");if(t.trim().length>25)parts.push(t);else if(n<=5)scanned.push({p,n});}
+if(scanned.length){const w=await getWorker();for(const x of scanned){tell("OCR de la page "+x.n+"…");const v=x.p.getViewport({scale:1.4}),c=document.createElement("canvas");c.width=Math.ceil(v.width);c.height=Math.ceil(v.height);await x.p.render({canvasContext:c.getContext("2d"),viewport:v}).promise;const r=await w.recognize(c);parts.push(r.data.text||"");c.width=c.height=1;}}
+return parts.join("\n").slice(0,50000);
+}
+const w=await getWorker();tell("Lecture de l'image par OCR…");const r=await w.recognize(file);return(r.data.text||"").slice(0,50000);
+}
+function classify(file,text){
+const source=norm(file.name+" "+text),warnings=[];let cls=null,ser=null,variant=null,sub=null;
+const matches=cat.classes.filter(c=>source.includes(norm(c.name))||(c.code&&norm(file.name).includes(norm(c.code))));
+if(matches.length===1)cls=matches[0];else if(matches.length>1)warnings.push("Plusieurs classes possibles : sélectionne la bonne classe.");
+if(cls){const ids=[...new Set(cat.offerings.filter(o=>o.class_id===cls.id&&o.series_id).map(o=>o.series_id))];const m=cat.series.filter(s=>ids.includes(s.id)&&source.includes(norm(s.name)));if(m.length===1)ser=m[0];const vids=[...new Set(cat.offerings.filter(o=>o.class_id===cls.id&&o.series_id===(ser?.id||null)&&o.variant_id).map(o=>o.variant_id))];const vm=cat.variants.filter(v=>vids.includes(v.id)&&source.includes(norm(v.name)));if(vm.length===1)variant=vm[0];}
+const found=cat.subjects.filter(s=>norm(s.name).length>2&&source.includes(norm(s.name)));
+if(found.length===1)sub=found[0];else if(found.length>1)warnings.push("Plusieurs matières détectées : choisis la matière exacte.");
+if(cls&&sub){const possible=cat.offerings.filter(o=>o.class_id===cls.id&&(!ser||o.series_id===ser.id)&&(!variant||o.variant_id===variant.id));if(!possible.some(o=>cat.links.some(l=>l.offering_id===o.id&&l.subject_id===sub.id))){sub=null;warnings.push("La matière détectée n'est pas autorisée pour la classe/série choisie.");}}
+if(!cls)warnings.push("Classe non identifiée avec certitude.");if(!sub)warnings.push("Matière non identifiée avec certitude.");
+if(cls&&cat.offerings.some(o=>o.class_id===cls.id&&o.variant_id)&&!variant)warnings.push("Vérifie l'option linguistique requise.");
+const year=source.match(/\b(19[89]\d|20[0-3]\d)\b/),seq=source.match(/\b(?:sequence|seq)\s*(?:n[o°]\s*)?([1-9])\b/);
+let type="sujet";if(/\b(corrige|correction|marking scheme|answers|solution)\b/.test(source))type="corrige";else if(/\b(cours|lesson|lecon|chapter|chapitre)\b/.test(source))type="cours";
+return{title:file.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").slice(0,160),document_type:type,class_name:cls?.name||"",series_name:ser?.name||"",language_option:variant?.name||"",subject_name:sub?.name||"",exam_year:year?Number(year[1]):"",sequence_number:seq?Number(seq[1]):"",confidence:Math.min(95,25+(cls?25:0)+(sub?25:0)+(ser?10:0)+(year?5:0)+(seq?5:0)),warnings,summary:text?text.replace(/\s+/g," ").slice(0,350):"Aucun texte exploitable n'a été extrait."};
+}
+function updateProgress(){
+const n=items.filter(x=>x.confirmed).length;$("uploadProgress").textContent=n+" / "+items.length+" fiche(s) confirmée(s)";
+$("uploadSubmit").disabled=!n;$("uploadSubmit").textContent=n?"Envoyer les "+n+" fiche(s) confirmée(s) pour validation →":"Confirmer au moins une fiche pour l'envoi";
+}
+function setupCard(card,a){
+const get=k=>card.querySelector('[data-f="'+k+'"]'),sub=get("subsystem"),cl=get("class"),se=get("series"),va=get("variant"),su=get("subject"),wrap=card.querySelector('[data-wrap="variant"]');
+function subjects(pre){const off=cat.offerings.find(o=>o.class_id===cl.value&&o.series_id===(se.value||null)&&o.variant_id===(va.value||null)),links=cat.links.filter(x=>x.offering_id===off?.id),rows=links.map(x=>{const s=cat.subjects.find(z=>z.id===x.subject_id);return s?{id:s.id,name:s.name+(x.is_optional?" — Optionnelle":"")}:null;}).filter(Boolean);su.innerHTML=opts(rows,"Choisir la matière");su.disabled=!rows.length;if(pre&&rows.some(x=>x.id===pre))su.value=pre;}
+function variants(pre){const ids=[...new Set(cat.offerings.filter(o=>o.class_id===cl.value&&o.series_id===(se.value||null)&&o.variant_id).map(o=>o.variant_id))],rows=cat.variants.filter(x=>ids.includes(x.id));wrap.hidden=!rows.length;va.innerHTML=opts(rows,"Choisir l'option linguistique");va.disabled=!rows.length;va.required=!!rows.length;if(pre&&ids.includes(pre))va.value=pre;subjects();}
+function series(pre){const ids=[...new Set(cat.offerings.filter(o=>o.class_id===cl.value&&o.series_id).map(o=>o.series_id))],rows=cat.series.filter(x=>ids.includes(x.id));se.innerHTML=opts(rows,"Aucune série / orientation");se.disabled=!rows.length;if(pre&&ids.includes(pre))se.value=pre;variants();}
+function classes(pre){const rows=cat.classes.filter(x=>x.subsystem_id===sub.value);cl.innerHTML=opts(rows,"Choisir la classe");cl.disabled=!sub.value;if(pre&&rows.some(x=>x.id===pre))cl.value=pre;series();}
+sub.addEventListener("change",()=>classes());cl.addEventListener("change",()=>series());se.addEventListener("change",()=>variants());va.addEventListener("change",()=>subjects());
+const c=byName(cat.classes,a.class_name);if(c){sub.value=c.subsystem_id;classes(c.id);const s=byName(cat.series,a.series_name);if(s)se.value=s.id;variants(byName(cat.variants,a.language_option)?.id);subjects(byName(cat.subjects,a.subject_name)?.id);}else classes();
+}
+function values(card){
+const v=k=>card.querySelector('[data-f="'+k+'"]')?.value.trim()||"",classId=v("class"),seriesId=v("series")||null,variantId=v("variant")||null;
+const offering=cat.offerings.find(o=>o.class_id===classId&&o.series_id===seriesId&&o.variant_id===variantId);
+return{title:v("title"),type:v("type"),classId,seriesId,subjectId:v("subject"),offering,valid:!!offering&&cat.links.some(l=>l.offering_id===offering.id&&l.subject_id===v("subject")),year:v("year"),sequence:v("sequence"),description:v("description"),variantRequired:card.querySelector('[data-f="variant"]').required,variantId};
+}
+function render(item,i){
+const a=item.analysis||{},card=document.createElement("article");card.className="upload-analysis-card";card.dataset.index=i;
+card.innerHTML='<div class="upload-analysis-heading"><div><strong>'+esc(item.file.name)+'</strong><small>Analyse locale · confiance indicative : '+Number(a.confidence||0)+' %</small></div><span class="upload-analysis-state warning">À vérifier</span></div>'+
+(a.warnings?.length?'<ul class="upload-analysis-warning">'+a.warnings.map(w=>"<li>"+esc(w)+"</li>").join("")+"</ul>":"")+
+'<div class="upload-analysis-grid">'+
+'<label>Titre proposé *<input data-f="title" maxlength="160" required value="'+esc(a.title||"")+'"></label>'+
+'<label>Type<select data-f="type">'+["sujet","corrige","cours","autre"].map(x=>'<option value="'+x+'" '+((a.document_type||"sujet")===x?"selected":"")+'>'+({sujet:"Sujet",corrige:"Corrigé",cours:"Cours",autre:"Autre"}[x])+"</option>").join("")+'</select></label>'+
+'<label>Sous-système *<select data-f="subsystem" required>'+opts(cat.subsystems,"Choisir le sous-système")+'</select></label>'+
+'<label>Classe *<select data-f="class" required disabled></select></label>'+
+'<label>Série / orientation<select data-f="series" disabled></select></label>'+
+'<label data-wrap="variant" hidden>Option linguistique<select data-f="variant" disabled></select></label>'+
+'<label>Matière *<select data-f="subject" required disabled></select></label>'+
+'<label>Année<input data-f="year" type="number" min="1950" max="2100" value="'+esc(a.exam_year||"")+'"></label>'+
+'<label>Numéro de séquence<input data-f="sequence" type="number" min="1" max="10" value="'+esc(a.sequence_number||"")+'"></label></div>'+
+'<label class="upload-description-label">Description<input data-f="description" maxlength="1000" value=""></label>'+
+'<p class="upload-summary"><strong>Extrait :</strong> '+esc(a.summary||"Aucun texte exploitable.")+'</p>'+
+'<div class="upload-card-actions"><button class="confirm-one" type="button">Confirmer cette fiche</button><span class="upload-card-note">'+(item.uploaded?"Fichier téléversé":"Téléversement en attente")+'</span></div>';
+$("uploadAnalysisResults").append(card);setupCard(card,a);
+card.addEventListener("input",e=>{if(e.target.matches("input,select")){item.confirmed=false;const st=card.querySelector(".upload-analysis-state");st.textContent="À vérifier";st.className="upload-analysis-state warning";card.querySelector(".confirm-one").textContent="Confirmer cette fiche";updateProgress();}});
+card.querySelector(".confirm-one").onclick=()=>{
+const v=values(card);if(!v.title||!v.classId||!v.offering||!v.subjectId||!v.valid||(v.variantRequired&&!v.variantId)){tell("Complète le titre, la classe, la série/option si nécessaire et une matière autorisée.","error");return;}
+if(!item.uploaded){tell("Le fichier n'a pas été téléversé.","error");return;}
+item.confirmed=!item.confirmed;const st=card.querySelector(".upload-analysis-state");st.textContent=item.confirmed?"Fiche confirmée":"À vérifier";st.className="upload-analysis-state "+(item.confirmed?"success":"warning");card.querySelector(".confirm-one").textContent=item.confirmed?"Modifier la fiche":"Confirmer cette fiche";updateProgress();tell(item.confirmed?"Fiche confirmée.":"Fiche rouverte pour modification.", "success");
+};
+}
+$("analyzeBatchButton").onclick=async()=>{
+if(!files.length)return;$("analyzeBatchButton").disabled=true;$("uploadSubmit").disabled=true;$("uploadAnalysisResults").replaceChildren();items.splice(0);
+for(let i=0;i<files.length;i++){
+const file=files[i],item={file,mime:mime(file),path:null,hash:null,uploaded:false,confirmed:false,sent:false};items.push(item);
+tell("Analyse du fichier "+(i+1)+"/"+files.length+" : "+file.name);
+try{const text=await extract(file);item.analysis=classify(file,text);}catch(e){item.analysis={title:file.name.replace(/\.[^.]+$/,""),document_type:"sujet",warnings:["Analyse locale incomplète : complète manuellement les champs."],summary:e.message};}
+render(item,i);
+try{
+const {data:{session:s}}=await db.auth.getSession();if(!s)throw Error("Session expirée.");
+const safe=file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
+item.path=s.user.id+"/"+crypto.randomUUID()+"/"+crypto.randomUUID()+"-"+safe;
+const up=await db.storage.from("documents").upload(item.path,file,{contentType:item.mime,upsert:false});if(up.error)throw up.error;item.uploaded=true;
+const digest=await crypto.subtle.digest("SHA-256",await file.arrayBuffer());item.hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+$("uploadAnalysisResults").querySelector('[data-index="'+i+'"] .upload-card-note').textContent="Fichier téléversé et prêt";
+}catch(e){item.error=e.message;$("uploadAnalysisResults").querySelector('[data-index="'+i+'"] .upload-card-note').textContent="Échec du téléversement : "+e.message;}
+}
+tell("Analyse terminée. Confirme chaque fiche séparément. Les fiches non confirmées ne seront jamais envoyées.","success");$("analyzeBatchButton").disabled=false;updateProgress();
+};
+form.addEventListener("submit",async ev=>{
+ev.preventDefault();const selected=items.map((item,i)=>({item,i,card:$("uploadAnalysisResults").querySelector('[data-index="'+i+'"]')})).filter(x=>x.item.confirmed);
+if(!selected.length){tell("Aucune fiche confirmée à envoyer.","error");return;}
+$("uploadSubmit").disabled=true;$("analyzeBatchButton").disabled=true;const {data:{session:s}}=await db.auth.getSession();if(!s){tell("Session expirée. Reconnecte-toi.","error");return;}
+let sent=0;const errors=[];
+for(const x of selected){const item=x.item,v=values(x.card);try{
+if(!item.uploaded||!v.title||!v.offering||!v.valid)throw Error("Fiche incomplète ou fichier non téléversé.");
+const {data:doc,error}=await db.from("documents").insert({title:v.title,description:v.description||null,document_type:v.type,status:"pending",school_class_id:v.classId,series_id:v.seriesId,class_offering_id:v.offering.id,subject_id:v.subjectId,exam_year:v.year?Number(v.year):null,sequence_number:v.sequence?Number(v.sequence):null,uploader_id:s.user.id}).select("id").single();if(error)throw error;
+const f=await db.from("document_files").insert({document_id:doc.id,uploader_id:s.user.id,bucket_id:"documents",storage_path:item.path,original_name:item.file.name,mime_type:item.mime,file_size:item.file.size,sha256:item.hash});
+if(f.error){await db.from("documents").delete().eq("id",doc.id);throw f.error;}item.sent=true;sent++;
+}catch(e){errors.push(item.file.name+" : "+e.message);}}
+if(sent){
+const keep=items.map((item,i)=>({item,card:$("uploadAnalysisResults").querySelector('[data-index="'+i+'"]')})).filter(x=>!x.item.sent);
+items.splice(0,items.length,...keep.map(x=>x.item));files.splice(0,files.length,...keep.map(x=>x.item.file));$("uploadAnalysisResults").replaceChildren();
+items.forEach((item,i)=>{item.confirmed=false;render(item,i);});drawFiles();
+}
+tell(sent+" fichier(s) envoyé(s) pour validation."+(errors.length?" Échec(s) : "+errors.join(" | "):""),errors.length?"error":"success");
+$("analyzeBatchButton").disabled=!files.length;updateProgress();
+});
+drawFiles();updateProgress();
 })();

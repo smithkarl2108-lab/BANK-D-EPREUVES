@@ -78,7 +78,7 @@
       const rows=catalog.offerings.filter(x=>x.class_id===cid&&x.series_id);
       const ids=[...new Set(rows.map(x=>x.series_id))];
       const available=catalog.series.filter(x=>ids.includes(x.id));
-      seriesSelect.innerHTML=options(available,"Aucune série");
+      seriesSelect.innerHTML=options(available,"Aucune série / orientation");
       seriesSelect.disabled=!available.length;
       if(preferredSeries&&ids.includes(preferredSeries))seriesSelect.value=preferredSeries;
       refreshVariants(preferredVariant);
@@ -142,7 +142,7 @@
         <label>Type<select data-f="type">${["sujet","corrige","cours","autre"].map(v=>'<option value="'+v+'"'+((a.document_type||"sujet")===v?" selected":"")+'>'+({sujet:"Sujet",corrige:"Corrigé",cours:"Cours",autre:"Autre"}[v])+"</option>").join("")}</select></label>
         <label>Sous-système *<select data-f="subsystem" required>${options(catalog.subsystems,"Choisir le sous-système")}</select></label>
         <label>Classe *<select data-f="class" required disabled><option value="">Choisir d'abord le sous-système</option></select><small data-hint="class">Choisis d'abord un sous-système.</small></label>
-        <label>Série<select data-f="series" disabled><option value="">Aucune série</option></select><small data-hint="series">Choisis la classe.</small></label>
+        <label>Série / orientation<select data-f="series" disabled><option value="">Aucune série / orientation</option></select><small data-hint="series">Choisis la classe.</small></label>
         <label data-wrap="variant" hidden>Option linguistique<select data-f="variant" disabled><option value="">Aucune option linguistique</option></select></label>
         <label>Matière *<select data-f="subject" required disabled><option value="">Choisis d’abord la classe</option></select><small data-hint="subject">Les matières dépendront de la classe et de la série.</small></label>
         <label>Année<input data-f="year" type="number" min="1950" max="2100" value="${esc(a.exam_year||"")}"></label>

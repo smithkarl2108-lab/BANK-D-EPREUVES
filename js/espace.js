@@ -80,6 +80,24 @@
 
   if (profile.role === "admin") { window.location.replace("admin.html"); return; }
 
+  // Show the page only after the authenticated profile and role are resolved.
+  document.body.classList.remove("auth-routing-pending");
+  const dashboardCard = document.getElementById("accountCard");
+  const dashboardTitle = dashboardCard?.querySelector("h2");
+  const dashboardText = dashboardCard?.querySelector("p");
+  const dashboardIcon = dashboardCard?.querySelector(".account-icon");
+  if (profile.role === "teacher") {
+    document.getElementById("accountEyebrow").textContent = "ESPACE ENSEIGNANT";
+    if (dashboardTitle) dashboardTitle.textContent = "Ton espace enseignant";
+    if (dashboardText) dashboardText.textContent = "Retrouve tes dépôts, prépare les épreuves et suis les validations de tes documents.";
+    if (dashboardIcon) dashboardIcon.textContent = "✎";
+  } else {
+    document.getElementById("accountEyebrow").textContent = "ESPACE ÉLÈVE";
+    if (dashboardTitle) dashboardTitle.textContent = "Ton tableau de bord élève";
+    if (dashboardText) dashboardText.textContent = "Accède à la bibliothèque, retrouve les épreuves et prépare tes révisions depuis ton espace personnel.";
+    if (dashboardIcon) dashboardIcon.textContent = "▤";
+  }
+
   async function loadRequests() {
     const target = document.getElementById("resetRequests");
     try {

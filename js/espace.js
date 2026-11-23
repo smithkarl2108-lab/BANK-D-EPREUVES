@@ -40,7 +40,7 @@
     "Bienvenue, " + (profile.display_name || "sur BANK D'EPREUVES") + " !";
   document.getElementById("accountIdentity").textContent =
     "Identifiant : " + (profile.username || "non défini") + " · " +
-    ({ student: "Élève", teacher: "Intervenant", inspector: "Inspecteur", admin: "Administrateur" }[profile.role] || "Utilisateur");
+    ({ student: "Élève", teacher: "Intervenant", admin: "Administrateur" }[profile.role] || "Utilisateur");
 
 
   if (session.user.app_metadata?.must_change_password === true) {

@@ -1,4 +1,4 @@
-/* Évaluation et validation par administrateur ou inspecteur autorisé via API sécurisée. */
+/* Validation des épreuves par administrateur ou utilisateur délégué. */
 "use strict";
 (async()=>{
 const panel=document.getElementById("adminDocumentsPanel");if(!panel)return;

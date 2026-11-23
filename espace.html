@@ -13,8 +13,17 @@
 </head>
 <body class="auth-page">
   <header class="site-header"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><span class="brand-mark-main">B</span><span class="brand-mark-accent">É</span></span><span class="brand-name">BANK <strong>D'EPREUVES</strong><small>La réussite se prépare</small></span></a><button class="button button-ghost" id="logoutButton" type="button">Déconnexion</button></header>
+  <nav id="adminNavigation" class="admin-navigation" hidden aria-label="Navigation administrateur">
+    <div class="admin-navigation-brand"><span class="admin-brand-mark">B<span>É</span></span><div><strong>BANK D'ÉPREUVES</strong><small>Administration</small></div></div>
+    <p class="admin-navigation-label">ESPACE ADMINISTRATEUR</p>
+    <a class="admin-nav-link active" href="#adminDashboard"><span>▦</span>Vue d'ensemble & droits</a>
+    <a class="admin-nav-link" href="#adminDocumentsPanel"><span>✓</span>Validation des épreuves</a>
+    <a class="admin-nav-link" href="#adminResetPanel"><span>↻</span>Réinitialisations</a>
+    <a class="admin-nav-link" href="#uploadDocumentPanel"><span>＋</span>Dépôt d'épreuves</a>
+    <div class="admin-navigation-footer"><span class="admin-status-dot"></span> Console sécurisée</div>
+  </nav>
   <main class="account-layout">
-    <span class="eyebrow">ESPACE PERSONNEL</span><h1 id="welcomeTitle">Bienvenue !</h1><p id="accountIdentity" class="account-email"></p>
+    <span class="eyebrow" id="accountEyebrow">ESPACE PERSONNEL</span><h1 id="welcomeTitle">Bienvenue !</h1><p id="accountIdentity" class="account-email"></p>
     <section id="changePasswordPanel" class="account-card password-change-card" hidden>
       <div>
         <h2>Choisis ton nouveau mot de passe</h2>

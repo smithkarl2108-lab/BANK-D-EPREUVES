@@ -143,11 +143,11 @@ if(!selected.length){tell("Aucune fiche confirmée à envoyer.","error");return;
 $("uploadSubmit").disabled=true;$("analyzeBatchButton").disabled=true;const {data:{session:s}}=await db.auth.getSession();if(!s){tell("Session expirée. Reconnecte-toi.","error");return;}
 let sent=0;const errors=[];
 for(const x of selected){const item=x.item,v=values(x.card);try{
-if(!item.uploaded||!v.title||!v.offering||!v.valid)throw Error("Fiche incomplète ou fichier non téléversé.");
-const {data:doc,error}=await db.from("documents").insert({title:v.title,description:v.description||null,document_type:v.type,status:"pending",school_class_id:v.classId,series_id:v.seriesId,class_offering_id:v.offering.id,subject_id:v.subjectId,exam_year:v.year?Number(v.year):null,sequence_number:v.sequence?Number(v.sequence):null,uploader_id:s.user.id}).select("id").single();if(error)throw error;
-const f=await db.from("document_files").insert({document_id:doc.id,uploader_id:s.user.id,bucket_id:"documents",storage_path:item.path,original_name:item.file.name,mime_type:item.mime,file_size:item.file.size,sha256:item.hash});
-if(f.error){await db.from("documents").delete().eq("id",doc.id);throw f.error;}\nconst links=[v.classId,...v.extraClassIds].map(class_id=>({document_id:doc.id,class_id}));const linked=await db.from("document_classes").insert(links);if(linked.error){await db.from("documents").delete().eq("id",doc.id);throw linked.error;}item.sent=true;sent++;
-}catch(e){errors.push(item.file.name+" : "+e.message);}}
+if(!item.uploaded||!item.path||!item.hash||!v.title||!v.offering||!v.valid)throw Error("Fiche incomplète ou fichier non téléversé.");
+const {data:documentId,error}=await db.rpc("submit_exam_document",{p_title:v.title,p_description:v.description||null,p_document_type:v.type,p_class_id:v.classId,p_series_id:v.seriesId,p_offering_id:v.offering.id,p_subject_id:v.subjectId,p_exam_year:v.year?Number(v.year):null,p_sequence_number:v.sequence?Number(v.sequence):null,p_storage_path:item.path,p_original_name:item.file.name,p_mime_type:item.mime,p_file_size:item.file.size,p_sha256:item.hash,p_extra_class_ids:v.extraClassIds});
+if(error)throw error;
+item.sent=true;sent++;
+}catch(e){errors.push(item.file.name+" : "+(e.message||String(e)));}}
 if(sent){
 const keep=items.map((item,i)=>({item,card:$("uploadAnalysisResults").querySelector('[data-index="'+i+'"]')})).filter(x=>!x.item.sent);
 items.splice(0,items.length,...keep.map(x=>x.item));files.splice(0,files.length,...keep.map(x=>x.item.file));$("uploadAnalysisResults").replaceChildren();

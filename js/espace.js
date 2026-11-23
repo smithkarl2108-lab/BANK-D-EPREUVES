@@ -172,7 +172,12 @@
     }
   }
 
-  if (profile.role === "admin") {
+  let canReset = profile.role === "admin";
+  if (!canReset) {
+    const { data: permission } = await client.from("user_permissions").select("permission").eq("user_id", session.user.id).eq("permission", "reset_passwords").maybeSingle();
+    canReset = Boolean(permission);
+  }
+  if (canReset) {
     document.getElementById("adminResetPanel").hidden = false;
     await loadRequests();
     window.setInterval(loadRequests, 30000);

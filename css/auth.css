@@ -85,3 +85,6 @@ body.admin-mode #adminDocumentsPanel,body.admin-mode #adminResetPanel,body.admin
 body.admin-mode #exploreLink{margin-bottom:40px}
 @media(max-width:900px){body.admin-mode .site-header{margin-left:0;padding:15px 20px}body.admin-mode .account-layout{margin-left:0;padding:24px 20px}.admin-navigation{width:210px}.admin-navigation-brand{padding-bottom:17px}}
 @media(max-width:650px){body.admin-mode .site-header{margin-left:0}.admin-navigation{position:relative;width:auto;inset:auto;min-height:0;padding:12px;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;border-radius:0}.admin-navigation-brand{width:100%;padding:4px 6px 10px}.admin-navigation-label,.admin-navigation-footer{display:none}.admin-nav-link{padding:9px 10px;font-size:10px;flex:1;justify-content:center;min-width:110px}.admin-nav-link span{width:auto}body.admin-mode .account-layout{padding:20px 14px}}
+
+/* Role routing pages stay invisible until authentication is resolved. */
+.auth-routing-pending{visibility:hidden}

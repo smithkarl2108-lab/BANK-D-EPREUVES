@@ -10,7 +10,7 @@ if(profile?.role!=="admin"||!profile.is_active)return;
 panel.hidden=false;
 const msg=document.getElementById("adminDashboardMessage"),kpis=document.getElementById("adminKpis"),list=document.getElementById("inspectorList");
 const say=(text,type="info")=>{msg.textContent=text;msg.className="auth-message "+type;msg.hidden=false;};
-const rights={review_documents:"Examiner / valider les épreuves",manage_users:"Gérer les utilisateurs",reset_passwords:"Traiter les réinitialisations",view_activity:"Consulter le journal d'activité",manage_catalog:"Gérer classes et matières"};
+const rights={review_documents:"Examiner / valider les épreuves",manage_users:"Activer / suspendre des comptes (hors admins)",reset_passwords:"Traiter les réinitialisations"};
 async function api(body){const {data:{session:s}}=await db.auth.getSession();const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json",apikey:config.publishableKey,Authorization:"Bearer "+s.access_token},body:JSON.stringify(body)});const result=await res.json().catch(()=>({}));if(!res.ok)throw Error(result.error||"Une erreur est survenue.");return result;}
 function kpi(value,label){const el=document.createElement("div");el.className="admin-kpi";const n=document.createElement("strong");n.textContent=String(value??0);const t=document.createElement("span");t.textContent=label;el.append(n,t);return el;}
 async function refresh(){

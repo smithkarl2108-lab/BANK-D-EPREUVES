@@ -11,6 +11,7 @@
  if(error||!profile){location.replace("espace.html");return;}
  if(profile.role!=="admin"){location.replace("espace.html");return;}
  if(!profile.is_active){await db.auth.signOut();location.replace("connexion.html");return;}
+ document.body.classList.remove("auth-routing-pending");
  const views={overview:"Vue d'ensemble",permissions:"Utilisateurs & droits",review:"Validation des épreuves",resets:"Réinitialisations",upload:"Dépôt d'épreuves"};
  function switchView(key){
    if(!views[key])return;

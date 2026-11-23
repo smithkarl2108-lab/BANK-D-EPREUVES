@@ -78,6 +78,13 @@
       list.textContent = "Impossible de charger les documents : " + error.message;
       return;
     }
+    const documentIds = (data || []).map((doc) => doc.id);
+    const associations = documentIds.length ? await client.from("document_classes").select("document_id,class_id").in("document_id", documentIds) : { data: [], error: null };
+    const classIds = [...new Set((associations.data || []).map((row) => row.class_id))];
+    const classRows = classIds.length ? await client.from("school_classes").select("id,name").in("id", classIds) : { data: [], error: null };
+    const classNames = new Map((classRows.data || []).map((row) => [row.id, row.name]));
+    const classesByDoc = new Map();
+    (associations.data || []).forEach((row) => { const arr = classesByDoc.get(row.document_id) || []; const name = classNames.get(row.class_id); if (name && !arr.includes(name)) arr.push(name); classesByDoc.set(row.document_id, arr); });
     if (!data?.length) {
       const empty = document.createElement("p");
       empty.className = "admin-document-empty";
@@ -93,7 +100,8 @@
       title.textContent = doc.title || "Document sans titre";
       const meta = document.createElement("p");
       const type = ({ sujet: "Sujet", corrige: "Corrigé", cours: "Cours", autre: "Autre" })[doc.document_type] || "Document";
-      meta.textContent = [type, doc.class_offerings?.display_name || [doc.school_classes?.name, doc.series?.name].filter(Boolean).join(" "), doc.subjects?.name, doc.exam_year, doc.sequence_number ? "Séquence " + doc.sequence_number : ""].filter(Boolean).join(" · ");
+      const linkedClasses = classesByDoc.get(doc.id) || [doc.class_offerings?.display_name || [doc.school_classes?.name, doc.series?.name].filter(Boolean).join(" ")];
+      meta.textContent = [type, linkedClasses.join(" / "), doc.subjects?.name, doc.exam_year, doc.sequence_number ? "Séquence " + doc.sequence_number : ""].filter(Boolean).join(" · ");
       const description = document.createElement("p");
       description.textContent = doc.description || "Aucune description.";
       const fileInfo = document.createElement("p");

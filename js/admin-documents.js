@@ -7,7 +7,7 @@ const db=lib.createClient(cfg.url,cfg.publishableKey),endpoint=cfg.url+"/functio
 const {data:{session}}=await db.auth.getSession();if(!session)return;
 const {data:profile}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();if(!profile?.is_active)return;
 let allowed=profile.role==="admin";
-if(profile.role==="inspector"){const {data:p}=await db.from("inspector_permissions").select("permission").eq("user_id",session.user.id).eq("permission","review_documents").maybeSingle();allowed=!!p;}
+if(profile.role==="inspector"){const {data:p}=await db.from("user_permissions").select("permission").eq("user_id",session.user.id).eq("permission","review_documents").maybeSingle();allowed=!!p;}
 if(!allowed)return;panel.hidden=false;
 const list=document.getElementById("pendingDocuments"),stats=document.getElementById("adminDocumentStats");
 async function api(action,extra={}){const {data:{session:s}}=await db.auth.getSession();const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json",apikey:cfg.publishableKey,Authorization:"Bearer "+s.access_token},body:JSON.stringify({action,...extra})});const out=await res.json().catch(()=>({}));if(!res.ok)throw Error(out.error||"Action impossible.");return out;}

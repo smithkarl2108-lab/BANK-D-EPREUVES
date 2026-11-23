@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-  <script src="js/supabase-config.js" defer></script><script src="js/espace.js" defer></script><script src="js/upload-document.js" defer></script><script src="js/admin-documents.js" defer></script><script src="js/admin-dashboard.js" defer></script><script src="js/inspector-users.js" defer></script><script src="js/password-visibility.js" defer></script>
+  <script src="js/supabase-config.js" defer></script><script src="js/espace.js" defer></script><script src="js/upload-document.js" defer></script><script src="js/admin-documents.js" defer></script><script src="js/admin-dashboard.js" defer></script><script src="js/password-visibility.js" defer></script>
 </head>
 <body class="auth-page">
   <header class="site-header"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><span class="brand-mark-main">B</span><span class="brand-mark-accent">É</span></span><span class="brand-name">BANK <strong>D'EPREUVES</strong><small>La réussite se prépare</small></span></a><button class="button button-ghost" id="logoutButton" type="button">Déconnexion</button></header>
@@ -46,27 +46,12 @@
     </section>
     <div id="accountCard" class="account-card"><span class="account-icon">▤</span><div><h2>Ton espace est prêt à évoluer</h2><p>Tu pourras bientôt retrouver tes épreuves, tes corrigés et tes favoris depuis cette page.</p></div></div>
     <div id="accountMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
-    <section id="inspectorUsersPanel" class="account-card inspector-users-panel" hidden><div><span class="eyebrow">GESTION DÉLÉGUÉE</span><h2>Gestion des comptes</h2><p>Tu peux activer ou suspendre les comptes (hors administrateurs). Tu ne peux pas modifier les droits des administrateurs.</p></div><div id="inspectorManagedUsers"><p>Chargement des comptes…</p></div></section>
-    <section id="adminDashboard class="account-card admin-dashboard" hidden>
-      <div class="admin-dashboard-head"><div><span class="eyebrow">ADMINISTRATION CENTRALE</span><h2>Tableau de bord</h2><p>Pilotage de BANK D'ÉPREUVES et gestion de tes inspecteurs.</p></div><button type="button" id="adminRefresh" class="button button-ghost">Actualiser</button></div>
+    <section id="adminDashboard" class="account-card admin-dashboard" hidden>
+      <div class="admin-dashboard-head"><div><span class="eyebrow">ADMINISTRATION CENTRALE</span><h2>Tableau de bord</h2><p>Gestion de BANK D'ÉPREUVES et délégation des permissions.</p></div><button type="button" id="adminRefresh" class="button button-ghost">Actualiser</button></div>
       <div id="adminKpis" class="admin-kpis"></div>
-      <h3>Nommer un inspecteur</h3><p>Crée un compte inspecteur et attribue uniquement les droits nécessaires. Tu peux modifier ses droits plus tard.</p>
-      <form id="inspectorCreateForm" class="auth-form admin-inspector-form">
-        <label>Nom complet<input name="fullName" required maxlength="80" placeholder="Nom de l'inspecteur"></label>
-        <label>Identifiant de connexion<input name="username" required minlength="3" maxlength="30" placeholder="ex. inspecteur_yaounde"></label>
-        <label>Téléphone (facultatif)<input name="phoneNumber" maxlength="30" placeholder="+237..."></label>
-        <label>Mot de passe provisoire<input name="password" type="password" minlength="8" maxlength="72" required placeholder="8 caractères minimum"></label>
-        <fieldset class="admin-rights"><legend>Autorisations à attribuer</legend>
-          <label><input type="checkbox" name="permissions" value="review_documents"> Examiner / valider les épreuves</label>
-          <label><input type="checkbox" name="permissions" value="manage_users"> Gérer les utilisateurs</label>
-          <label><input type="checkbox" name="permissions" value="reset_passwords"> Traiter les réinitialisations</label>
-          <label><input type="checkbox" name="permissions" value="view_activity"> Consulter le journal d'activité</label>
-          <label><input type="checkbox" name="permissions" value="manage_catalog"> Gérer classes et matières</label>
-        </fieldset>
-        <button class="auth-submit" type="submit">Créer l'inspecteur et lui attribuer ces droits</button>
-      </form>
+      <h3>Attribuer des permissions à un utilisateur</h3><p>Choisis un compte non administrateur. Son rôle de base ne change pas ; tu peux lui ajouter ou retirer des permissions.</p>
       <p id="adminDashboardMessage" class="auth-message" hidden role="status"></p>
-      <h3>Inspecteurs nommés</h3><div id="inspectorList"><p>Chargement…</p></div>
+      <h3>Comptes et permissions</h3><div id="userPermissionsList"><p>Chargement…</p></div>
     </section>
     <section id="adminDocumentsPanel" class="account-card admin-reset-card" hidden>
       <div class="admin-reset-content">

@@ -72,6 +72,13 @@ async function loadResources() {
     return;
   }
 
+  const ids = (data || []).map((item) => item.id);
+  const assoc = ids.length ? await client.from("document_classes").select("document_id,class_id").in("document_id", ids) : { data: [], error: null };
+  const classIds = [...new Set((assoc.data || []).map((row) => row.class_id))];
+  const classRows = classIds.length ? await client.from("school_classes").select("id,name").in("id", classIds) : { data: [], error: null };
+  const classNames = new Map((classRows.data || []).map((row) => [row.id, row.name]));
+  const classesByDoc = new Map();
+  (assoc.data || []).forEach((row) => { const arr = classesByDoc.get(row.document_id) || []; const name = classNames.get(row.class_id); if (name && !arr.includes(name)) arr.push(name); classesByDoc.set(row.document_id, arr); });
   resources = await Promise.all((data || []).map(async (item) => {
     const files = await Promise.all((item.document_files || []).map(async (file) => {
       const { data: signed, error: signedError } = await client.storage
@@ -83,7 +90,9 @@ async function loadResources() {
     }));
     return {
       ...item,
-      className: item.school_classes?.name || "Classe non précisée",
+      classIds: (assoc.data || []).filter((row) => row.document_id === item.id).map((row) => row.class_id),
+      classNames: classesByDoc.get(item.id)?.length ? classesByDoc.get(item.id) : [item.school_classes?.name || "Classe non précisée"],
+      className: (classesByDoc.get(item.id)?.length ? classesByDoc.get(item.id) : [item.school_classes?.name || "Classe non précisée"]).join(" · "),
       seriesName: item.series?.name || "",
       subjectName: item.subjects?.name || "Matière non précisée",
       typeLabel: ({ sujet: "Sujet", corrige: "Corrigé", cours: "Cours", autre: "Autre" })[item.document_type] || "Document",
@@ -107,7 +116,7 @@ function renderResources() {
       item.subjectName, item.typeLabel, item.yearLabel, item.sequence_number]
       .join(" ").toLocaleLowerCase("fr");
     return searchable.includes(query)
-      && (!selectedClass || item.school_class_id === selectedClass)
+      && (!selectedClass || item.classIds?.includes(selectedClass) || item.school_class_id === selectedClass)
       && (!selectedSubject || item.subject_id === selectedSubject)
       && (!selectedType || item.typeLabel === selectedType);
   });

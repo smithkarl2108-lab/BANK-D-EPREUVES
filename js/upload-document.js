@@ -85,7 +85,8 @@ const c=byName(cat.classes,a.class_name);if(c){sub.value=c.subsystem_id;classes(
 function values(card){
 const v=k=>card.querySelector('[data-f="'+k+'"]')?.value.trim()||"",classId=v("class"),seriesId=v("series")||null,variantId=v("variant")||null;
 const offering=cat.offerings.find(o=>o.class_id===classId&&o.series_id===seriesId&&o.variant_id===variantId);
-const extraClassIds=Array.from(card.querySelectorAll("[data-f=extra-classes] input[type=checkbox]:checked")).map(x=>x.value);\nreturn{title:v("title"),type:v("type"),classId,extraClassIds,seriesId,subjectId:v("subject"),offering,valid:!!offering&&cat.links.some(l=>l.offering_id===offering.id&&l.subject_id===v("subject")),year:v("year"),sequence:v("sequence"),description:v("description"),variantRequired:card.querySelector('[data-f="variant"]').required,variantId};
+const extraClassIds=Array.from(card.querySelectorAll("[data-f=extra-classes] input[type=checkbox]:checked")).map(x=>x.value); 
+return{title:v("title"),type:v("type"),classId,extraClassIds,seriesId,subjectId:v("subject"),offering,valid:!!offering&&cat.links.some(l=>l.offering_id===offering.id&&l.subject_id===v("subject")),year:v("year"),sequence:v("sequence"),description:v("description"),variantRequired:card.querySelector('[data-f="variant"]').required,variantId};
 }
 function render(item,i){
 const a=item.analysis||{},card=document.createElement("article");card.className="upload-analysis-card";card.dataset.index=i;

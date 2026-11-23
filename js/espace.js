@@ -78,6 +78,8 @@
     return;
   }
 
+  if (profile.role === "admin") { window.location.replace("admin.html"); return; }
+
   async function loadRequests() {
     const target = document.getElementById("resetRequests");
     try {

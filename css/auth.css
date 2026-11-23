@@ -55,3 +55,33 @@
 .admin-dashboard{width:100%;margin:22px 0;border:1px solid #d8e4ee;background:#fff}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:18px}.admin-dashboard h2{margin:8px 0}.admin-dashboard h3{margin:26px 0 12px;color:#183750}.admin-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:20px 0}.admin-kpi{padding:18px;border:1px solid #e1eaf0;border-radius:12px;background:#f8fbfd;display:flex;flex-direction:column;gap:6px}.admin-kpi strong{font:800 25px Manrope,sans-serif;color:#173a57}.admin-kpi span{font-size:12px;color:#637a8d}.admin-inspector-form{padding:16px;background:#f8fbfd;border:1px solid #e1eaf0;border-radius:12px}.admin-rights{border:1px solid #d9e5ee;border-radius:10px;padding:14px;margin:8px 0 18px;display:grid;gap:10px}.admin-rights legend{font-weight:700;color:#284b64;padding:0 5px}.admin-rights label{display:flex;align-items:center;gap:9px;font-size:13px;color:#36556c}.admin-rights input{width:16px;height:16px;accent-color:#2276b7}.user-permission-card{padding:18px;margin:12px 0;border:1px solid #dce7ee;border-radius:12px;background:#fff}.user-permission-card-head strong{color:#173c59;font-size:16px}.user-permission-card-head p{margin:5px 0 14px;font-size:12px;color:#708394}.user-edit-rights{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}.user-permission-card .auth-submit{max-width:260px}.admin-dashboard .auth-form label{min-width:0}.admin-dashboard input{max-width:100%;box-sizing:border-box}@media(max-width:640px){.admin-dashboard-head{align-items:flex-start;flex-direction:column}.admin-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .user-management-panel{width:100%;margin:20px 0;border:1px solid #dbe5ed;background:#fff}.user-management-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 12px;border-bottom:1px solid #edf2f6}.user-management-row strong{color:#1a3d59}.user-management-row p{margin:4px 0 0;font-size:12px;color:#708394}.user-management-row button{flex-shrink:0}@media(max-width:560px){.user-management-row{align-items:flex-start;flex-direction:column}}
+
+/* ADMIN CONSOLE SHELL - layout responsive */
+body.admin-mode{background:#f3f6fa}
+body.admin-mode .site-header{margin-left:250px;padding:18px 32px;border-bottom:1px solid #e6edf3}
+body.admin-mode .account-layout{max-width:none;margin:0 0 0 250px;padding:34px clamp(20px,4vw,54px);width:auto}
+body.admin-mode #accountIdentity{margin-bottom:22px}
+.admin-navigation{position:fixed;inset:0 auto 0 0;width:250px;padding:24px 15px;background:#102a43;color:#e9f1f7;display:flex;flex-direction:column;gap:6px;z-index:40;box-shadow:8px 0 28px rgba(16,42,67,.08)}
+.admin-navigation[hidden]{display:none}
+.admin-navigation-brand{display:flex;align-items:center;gap:12px;padding:6px 10px 25px;border-bottom:1px solid #29445c}
+.admin-brand-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#e9b94e;color:#102a43;font:800 24px Manrope}
+.admin-brand-mark span{color:#fff}
+.admin-navigation-brand strong{display:block;font:800 12px Manrope;letter-spacing:.4px}
+.admin-navigation-brand small{display:block;margin-top:4px;font-size:10px;color:#a8bdcf}
+.admin-navigation-label{margin:22px 10px 9px;color:#8ca6bb;font:700 9px "DM Sans";letter-spacing:1.5px}
+.admin-nav-link{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:10px;text-decoration:none;color:#c3d3e0;font:600 12px "DM Sans";transition:background .18s,color .18s}
+.admin-nav-link span{width:20px;text-align:center;font-size:17px}
+.admin-nav-link:hover,.admin-nav-link.active{background:#1d3e5b;color:#fff}
+.admin-nav-link.active{box-shadow:inset 3px 0 #e9b94e}
+.admin-navigation-footer{margin-top:auto;padding:14px 10px;color:#a6bdcf;font-size:10px;border-top:1px solid #29445c}
+.admin-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#5dd69a;margin-right:7px}
+body.admin-mode .admin-dashboard{border:0;box-shadow:none;padding:0;background:transparent}
+body.admin-mode .admin-dashboard-head{padding:0 0 18px;border-bottom:1px solid #e6edf3}
+body.admin-mode .admin-dashboard h3{font:800 18px Manrope;color:#173750}
+body.admin-mode .admin-kpi{background:#fff;border:1px solid #e4ebf0;padding:22px;border-radius:14px;box-shadow:0 4px 14px rgba(20,48,72,.035)}
+body.admin-mode .admin-kpi strong{font-size:30px}
+body.admin-mode .user-permission-card{box-shadow:0 4px 15px rgba(20,48,72,.035);border-color:#e5ebf0}
+body.admin-mode #adminDocumentsPanel,body.admin-mode #adminResetPanel,body.admin-mode #uploadDocumentPanel{border-radius:16px;box-shadow:0 4px 18px rgba(20,48,72,.035)}
+body.admin-mode #exploreLink{margin-bottom:40px}
+@media(max-width:900px){body.admin-mode .site-header{margin-left:0;padding:15px 20px}body.admin-mode .account-layout{margin-left:0;padding:24px 20px}.admin-navigation{width:210px}.admin-navigation-brand{padding-bottom:17px}}
+@media(max-width:650px){body.admin-mode .site-header{margin-left:0}.admin-navigation{position:relative;width:auto;inset:auto;min-height:0;padding:12px;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;border-radius:0}.admin-navigation-brand{width:100%;padding:4px 6px 10px}.admin-navigation-label,.admin-navigation-footer{display:none}.admin-nav-link{padding:9px 10px;font-size:10px;flex:1;justify-content:center;min-width:110px}.admin-nav-link span{width:auto}body.admin-mode .account-layout{padding:20px 14px}}

@@ -29,16 +29,18 @@ for(const r of rs)if(r.error)throw r.error;
 cat={subsystems:rs[0].data||[],classes:rs[1].data||[],series:rs[2].data||[],variants:rs[3].data||[],offerings:rs[4].data||[],subjects:rs[5].data||[],links:rs[6].data||[]};
 }catch(e){tell("Référentiel indisponible : "+e.message+". La sélection des fichiers reste active, mais les champs de classement pourront être incomplets.","error");cat={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],links:[]};}
 function drawFiles(){
-$("uploadFileList").replaceChildren();
-files.forEach((f,i)=>{const row=document.createElement("div");row.className="upload-file-row";const name=document.createElement("span");name.textContent=f.name+" · "+(f.size/1048576).toFixed(2)+" Mo";const b=document.createElement("button");b.type="button";b.textContent="Retirer";b.onclick=()=>{files.splice(i,1);drawFiles();};row.append(name,b);$("uploadFileList").append(row);});
-$("uploadFileCount").textContent=files.length+" / 20 fichiers";$("analyzeBatchButton").disabled=!files.length;
-}
 $("uploadFiles").addEventListener("change",()=>{
 const incoming=Array.from($("uploadFiles").files||[]);
 if(files.length+incoming.length>20){tell("20 fichiers maximum par dépôt.","error");$("uploadFiles").value="";return;}
 incoming.forEach(f=>{if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(mime(f)))return tell("Format non accepté : "+f.name,"error");if(!f.size||f.size>20*1048576)return tell(f.name+" est vide ou dépasse 20 Mo.","error");if(!files.some(x=>x.name===f.name&&x.size===f.size))files.push(f);});
 $("uploadFiles").value="";drawFiles();
 });
+
+$("uploadFileList").replaceChildren();
+files.forEach((f,i)=>{const row=document.createElement("div");row.className="upload-file-row";const name=document.createElement("span");name.textContent=f.name+" · "+(f.size/1048576).toFixed(2)+" Mo";const b=document.createElement("button");b.type="button";b.textContent="Retirer";b.onclick=()=>{files.splice(i,1);drawFiles();};row.append(name,b);$("uploadFileList").append(row);});
+$("uploadFileCount").textContent=files.length+" / 20 fichiers";$("analyzeBatchButton").disabled=!files.length;
+}
+
 async function getWorker(){
 if(worker)return worker;if(!window.Tesseract?.createWorker)throw Error("Moteur OCR non chargé. Vérifie ta connexion et actualise la page.");
 tell("Préparation du moteur OCR gratuit…");worker=await Tesseract.createWorker("fra+eng",1,{logger:m=>{if(m.status==="recognizing text")tell("OCR en cours : "+Math.round((m.progress||0)*100)+" %");}});return worker;

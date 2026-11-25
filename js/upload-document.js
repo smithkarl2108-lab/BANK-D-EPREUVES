@@ -2,26 +2,28 @@
 (async()=>{
 const panel=document.getElementById("uploadDocumentPanel"),form=document.getElementById("uploadDocumentForm");
 if(!panel||!form)return;
-const cfg=window.BANK_SUPABASE_CONFIG,lib=window.supabase;if(!cfg||!lib?.createClient)return;
-const db=lib.createClient(cfg.url,cfg.publishableKey),$=id=>document.getElementById(id);
-const {data:{session}}=await db.auth.getSession();if(!session)return;
-const {data:profile}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
-if(!profile?.is_active||!["admin","teacher"].includes(profile.role))return;
-panel.hidden=false;
+const $=id=>document.getElementById(id);
 const files=[],items=[];
 let cat={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],links:[]},worker=null;
 const tell=(s,t)=>{$("uploadFeedback").textContent=s;$("uploadFeedback").className="auth-message "+(t||"info");$("uploadFeedback").hidden=false;};
+const mime=f=>{const ext=f.name.split(".").pop().toLowerCase(),byExt={pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"},known=byExt[ext];return known&&(!f.type||f.type==="application/octet-stream"||f.type!==known)?known:(f.type||known||"");};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const opts=(arr,label)=>'<option value="">'+label+'</option>'+arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("");
+const byName=(arr,n)=>arr.find(x=>norm(x.name)===norm(n));
 $("uploadFiles").addEventListener("change",()=>{
 const incoming=Array.from($("uploadFiles").files||[]);
 if(files.length+incoming.length>20){tell("20 fichiers maximum par dépôt.","error");$("uploadFiles").value="";return;}
 incoming.forEach(f=>{if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(mime(f)))return tell("Format non accepté : "+f.name,"error");if(!f.size||f.size>20*1048576)return tell(f.name+" est vide ou dépasse 20 Mo.","error");if(!files.some(x=>x.name===f.name&&x.size===f.size))files.push(f);});
 $("uploadFiles").value="";drawFiles();
 });
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-const mime=f=>{const ext=f.name.split(".").pop().toLowerCase(),byExt={pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"},known=byExt[ext];return known&&(!f.type||f.type==="application/octet-stream"||f.type!==known)?known:(f.type||known||"");};
-const opts=(arr,label)=>'<option value="">'+label+'</option>'+arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("");
-const byName=(arr,n)=>arr.find(x=>norm(x.name)===norm(n));
+const cfg=window.BANK_SUPABASE_CONFIG,lib=window.supabase;
+if(!cfg||!lib?.createClient)return;
+const db=lib.createClient(cfg.url,cfg.publishableKey);
+const {data:{session}}=await db.auth.getSession();if(!session)return;
+const {data:profile}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
+if(!profile?.is_active||!["admin","teacher"].includes(profile.role))return;
+panel.hidden=false;
 try{
 const rs=await Promise.all([
 db.from("school_subsystems").select("id,name").eq("is_active",true).order("name"),

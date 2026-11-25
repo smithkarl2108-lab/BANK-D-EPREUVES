@@ -27,7 +27,7 @@ db.from("subjects").select("id,name").eq("is_active",true).order("name"),
 db.from("class_offering_subjects").select("offering_id,subject_id,is_optional").eq("is_active",true)]);
 for(const r of rs)if(r.error)throw r.error;
 cat={subsystems:rs[0].data||[],classes:rs[1].data||[],series:rs[2].data||[],variants:rs[3].data||[],offerings:rs[4].data||[],subjects:rs[5].data||[],links:rs[6].data||[]};
-}catch(e){tell("Chargement du référentiel impossible : "+e.message,"error");return;}
+}catch(e){tell("Référentiel indisponible : "+e.message+". La sélection des fichiers reste active, mais les champs de classement pourront être incomplets.","error");cat={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],links:[]};}
 function drawFiles(){
 $("uploadFileList").replaceChildren();
 files.forEach((f,i)=>{const row=document.createElement("div");row.className="upload-file-row";const name=document.createElement("span");name.textContent=f.name+" · "+(f.size/1048576).toFixed(2)+" Mo";const b=document.createElement("button");b.type="button";b.textContent="Retirer";b.onclick=()=>{files.splice(i,1);drawFiles();};row.append(name,b);$("uploadFileList").append(row);});

@@ -11,6 +11,12 @@ panel.hidden=false;
 const files=[],items=[];
 let cat={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],links:[]},worker=null;
 const tell=(s,t)=>{$("uploadFeedback").textContent=s;$("uploadFeedback").className="auth-message "+(t||"info");$("uploadFeedback").hidden=false;};
+$("uploadFiles").addEventListener("change",()=>{
+const incoming=Array.from($("uploadFiles").files||[]);
+if(files.length+incoming.length>20){tell("20 fichiers maximum par dépôt.","error");$("uploadFiles").value="";return;}
+incoming.forEach(f=>{if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(mime(f)))return tell("Format non accepté : "+f.name,"error");if(!f.size||f.size>20*1048576)return tell(f.name+" est vide ou dépasse 20 Mo.","error");if(!files.some(x=>x.name===f.name&&x.size===f.size))files.push(f);});
+$("uploadFiles").value="";drawFiles();
+});
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const mime=f=>{const ext=f.name.split(".").pop().toLowerCase(),byExt={pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"},known=byExt[ext];return known&&(!f.type||f.type==="application/octet-stream"||f.type!==known)?known:(f.type||known||"");};
@@ -29,12 +35,7 @@ for(const r of rs)if(r.error)throw r.error;
 cat={subsystems:rs[0].data||[],classes:rs[1].data||[],series:rs[2].data||[],variants:rs[3].data||[],offerings:rs[4].data||[],subjects:rs[5].data||[],links:rs[6].data||[]};
 }catch(e){tell("Référentiel indisponible : "+e.message+". La sélection des fichiers reste active, mais les champs de classement pourront être incomplets.","error");cat={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[],links:[]};}
 function drawFiles(){
-$("uploadFiles").addEventListener("change",()=>{
-const incoming=Array.from($("uploadFiles").files||[]);
-if(files.length+incoming.length>20){tell("20 fichiers maximum par dépôt.","error");$("uploadFiles").value="";return;}
-incoming.forEach(f=>{if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(mime(f)))return tell("Format non accepté : "+f.name,"error");if(!f.size||f.size>20*1048576)return tell(f.name+" est vide ou dépasse 20 Mo.","error");if(!files.some(x=>x.name===f.name&&x.size===f.size))files.push(f);});
-$("uploadFiles").value="";drawFiles();
-});
+
 
 $("uploadFileList").replaceChildren();
 files.forEach((f,i)=>{const row=document.createElement("div");row.className="upload-file-row";const name=document.createElement("span");name.textContent=f.name+" · "+(f.size/1048576).toFixed(2)+" Mo";const b=document.createElement("button");b.type="button";b.textContent="Retirer";b.onclick=()=>{files.splice(i,1);drawFiles();};row.append(name,b);$("uploadFileList").append(row);});

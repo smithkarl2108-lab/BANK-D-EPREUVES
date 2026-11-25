@@ -13,7 +13,7 @@ let cat={subsystems:[],classes:[],series:[],variants:[],offerings:[],subjects:[]
 const tell=(s,t)=>{$("uploadFeedback").textContent=s;$("uploadFeedback").className="auth-message "+(t||"info");$("uploadFeedback").hidden=false;};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-const mime=f=>f.type||({pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[f.name.split(".").pop().toLowerCase()]||"");
+const mime=f=>{const ext=f.name.split(".").pop().toLowerCase(),byExt={pdf:"application/pdf",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"},known=byExt[ext];return known&&(!f.type||f.type==="application/octet-stream"||f.type!==known)?known:(f.type||known||"");};
 const opts=(arr,label)=>'<option value="">'+label+'</option>'+arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("");
 const byName=(arr,n)=>arr.find(x=>norm(x.name)===norm(n));
 try{
